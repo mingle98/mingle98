@@ -1,4 +1,4 @@
-window.onload  = function (){
+window.onload = function (){
     // 定义公共方法类
     class Base {
         constructor () {};
@@ -181,7 +181,7 @@ window.onload  = function (){
         };
         // 7.处理节点的类
         // 判断是否有className
-        hasClassName(ele, cName) {
+        hasClassName(ele, cName) {console
             return !!ele.className.match(new RegExp('(\\s|^)' + cName + '(\\s|$)'));
         };
         addClass(ele, cName) {
@@ -190,7 +190,7 @@ window.onload  = function (){
                 var classObj = ele.className;
                 // 是否需要加空格 如果className是空就不需要
                 var bank = (classObj === '') ? '' : ' ';
-                ele.className = bank + cName;
+                ele.className += bank + cName;
             };
             return this;
         };
@@ -294,7 +294,87 @@ window.onload  = function (){
                 return -1;//不是ie浏览器
             }
         };
-        // 12.
+        // 12.获取cookie
+        getRaw(key) {
+            var reg = new RegExp('(^| )' + key + '=([^;]*)(;|\x24)');
+            var result = reg.exec(document.cookie);
+            if (result) {
+                return result[2] || null;
+            }
+
+            return null;
+        };
+        getCookie(key) {
+            var value = getRaw(key);
+            if (typeof value === 'string') {
+                value = decodeURIComponent(value);
+                return value;
+            }
+            return null;
+        };
+        // 13.获取安卓版本号
+        get_android_version() {
+            var ua = navigator.userAgent.toLowerCase();
+            var version = null;
+            if (ua.indexOf('android') > 0) {
+                var reg = /android [\d._]+/gi;
+                var vInfo = ua.match(reg);
+                version = (vInfo + '').replace(/[^0-9|_.]/ig, '').replace(/_/ig, '.'); // 得到版本号4.2.2
+                version = parseInt(version.split('.')[0], 10);// 得到版本号第一位
+            };
+            return version;
+        };
+        // 14.插入模板字符串的方法
+        insertHTML(position, tempStr, parentEle) {
+            // beforeBegin: 插入到标签开始前
+            // afterBegin:插入到标签开始标记之后
+            // beforeEnd:插入到标签结束标记前
+            // afterEnd:插入到标签结束标记后
+            // console.log('insertHTML:', position, tempStr, parentEle);
+            if (parentEle) {
+                parentEle.insertAdjacentHTML(position, tempStr);
+            }
+            else {
+                var box = document.createElement('div');
+                this.insertHTML('afterBegin', tempStr, box);
+                document.body.appendChild(box);
+            };
+        };
+        // 15.隐藏或者显示元素
+        toggleShow(elem) {
+            if (!elem) return;
+            if (elem.style.display === 'none') {
+                elem.style.display = 'block';
+            }
+            else {
+                elem.style.display = 'none';
+            }
+        };
+        // 16.获取设备视口宽高
+        getSViewportOffset() {
+            const obj = {
+                w: null,
+                n: null
+            }
+            if (window.innerWidth) {
+                return {
+                    w: window.innerWidth,
+                    h: window.innerHeight
+                }
+            } else {
+                if (document.compatMode === "BackCompat") {
+                    return {
+                        w: document.body.clientWidth,
+                        h: document.body.clientHeight
+                    }
+                } else {
+                    return {
+                        w: document.documentElement.clientWidth,
+                        h: document.documentElement.clientHeight
+                    }
+                }
+            }
+        }
     };
 
 
@@ -309,13 +389,232 @@ window.onload  = function (){
             this.options = {
                 // 弹窗模式或则嵌入模式
                 module: options.module || 'dialog',
+                // 主体编辑器容器id
+                containerId: options.id,
+                // 主体编辑器的宽高
+                editorW: options.editorW || 400,
+                editorH: options.editorH || 600,
+                // 编辑器工具容器id
+                toolContainerId: options.toolid,
+                onRender: options.onRender || function () {  },
+                onInit: options.onInit || function () {  },
             };
+            // 内部数据
+            this.store = {
+                // 编辑框尺寸--高=宽
+                width:0,
+                minwidth: 100,
+                maxwidth: 100,
+                defaultWidth: 200
+
+            };
+            console.log('options:', this.options);
             // 基础工具
             this.base = new Base();
+            // 渲染页面
+            this.render();
         };
         render() {
+            // 触发hook
+            this.options.onRender();
+            this.renderTpl();
+        };
+        // 存模版的方法
+        get_tpl(file) {
+            var editorBodyTpl = '<div class="editor-body" id="' + $id_prefix+ '_editor-body">' +
+                                    '<img class="editor-img" src="./img/u=1960663123,2805398451&fm=26&fmt=auto&gp=0.webp" alt="">' +
+                                    '<div class="editor-content">' +
+                                        '<div class="editor-top" id="' + $id_prefix+ '_editor-top"></div>' +
+                                        '<div class="editor-middle-box" id="' + $id_prefix+ '_editor-middle-box">' +
+                                            '<div class="editor-right" id="' + $id_prefix+ '_editor-right"></div>' +
+                                            '<div class="editor-box" id="editor-box"></div>' +
+                                            '<div class="editor-left" id="' + $id_prefix+ '_editor-left"></div>' +
+                                        '</div>' +
+                                        '<div class="editor-bottom" id="' + $id_prefix+ '_editor-bottom"></div>' +
+                                    '</div>' +
+                                    '<canvas class="canvas"></canvas>' +
+                                '</div>';
 
+            var editorToolTpl = '<div class="editor-toolBar" id="' + $id_prefix+ '_editor-toolBar">' +
+                                    '<div class="toolbar-item toolbar-item-before" id="' + $id_prefix+ '_toolbar-item-before">工具' +
+                                    '</div>' +
+                                    '<div class="toolbar-item">' +
+                                        '<p class="toolBar-item-icon-box">' +
+                                            '<span class="toolBar-item-icon"></span>' +
+                                        '</p>' +
+                                        '<span class="toolBar-item-text">重选</span>' +
+                                    '</div>' +
+                                    '<div class="toolbar-item">' +
+                                        '<p class="toolBar-item-icon-box">' +
+                                            '<span class="toolBar-item-icon"></span>'+
+                                        '</p>' +
+                                        '<span class="toolBar-item-text">撤销</span>' +
+                                    '</div>' +
+                                    '<div class="toolbar-item">' +
+                                        '<p class="toolBar-item-icon-box">' +
+                                            '<span class="toolBar-item-icon"></span>' +
+                                        '</p>' +
+                                        '<span class="toolBar-item-text">旋转</span>' +
+                                    '</div>' +
+                                    '<div class="toolbar-item">' +
+                                        '<p class="toolBar-item-icon-box">' +
+                                            '<span class="toolBar-item-icon"></span>' +
+                                        '</p>' +
+                                        '<span class="toolBar-item-text">选好了</span>' +
+                                    '</div>' +
+                                '</div>';
+            var tempObj = {
+                editor: editorBodyTpl,
+                editorTool: editorToolTpl
+            };
+            return tempObj[file];
+        }
+        // 渲染模版
+        renderTpl() {
+            var tempEditorTpl = this.get_tpl('editor');
+            var tempEditorToolTpl = this.get_tpl('editorTool');
+            //  弹窗
+            var maskDiv = document.createElement('div');
+            maskDiv.id = $id_prefix + "_editor-dialog-mask";
+            maskDiv.className = "editor-dialog-mask";
+
+            if (this.options.module === 'dialog') {
+                console.log('dialog');
+                // 渲染编辑器主体到页面
+                document.body.appendChild(maskDiv);
+                this.base.insertHTML('afterBegin', tempEditorTpl, this.base.getEleById('_editor-dialog-mask'));
+                this.base.addClass(this.base.getEleById('_editor-body'), 'dialog-body');
+                // 渲染编辑器工具bar主体到页面
+                this.base.insertHTML('afterBegin', tempEditorToolTpl, this.base.getEleById('_editor-body'));
+                this.base.addClass(this.base.getEleById('_editor-toolBar'), 'editor-toolBar-fold');
+            }
+            else {
+                console.log('Embedding');
+                // 渲染编辑器主体到页面
+                if (this.options.containerId) {
+                    var containerEle = document.getElementById(this.options.containerId);
+                    this.base.insertHTML('afterBegin', tempEditorTpl, containerEle);
+                }
+                else {
+                    this.base.insertHTML('afterBegin', tempTpl, '');
+                };
+                // 渲染编辑器工具bar主体到页面
+                if (this.options.toolContainerId) {
+                    var containerToolEle = document.getElementById(this.options.toolContainerId);
+                    this.base.insertHTML('afterBegin', tempEditorToolTpl, containerToolEle);
+                }
+                else {
+                    this.base.insertHTML('afterBegin', tempEditorToolTpl, '');
+                };
+                this.base.toggleShow(this.base.getEleById('_toolbar-item-before'));
+            };
+            this.setEvent();
+            // 初始化
+            this.init();
+        };
+        // 设置事件
+        setEvent() {
+            var toolbar = this.base.getEleById('_editor-toolBar');
+            var beforeItem = this.base.getEleById('_toolbar-item-before');
+            var me = this;
+            if (this.options.module === 'dialog') {
+                var toolStatus = false;
+                // 展开折叠工具bar
+                var visibleTollBar = function () { 
+                    if (!toolStatus) {
+                        if (me.options.module === 'dialog' && +me.store.equipmentW <= 460) {
+                            toolbar.style.width = '70vw'
+                        }
+                        else {
+                            toolbar.style.width = '338px'
+                        };
+                        toolStatus = true;
+                    }
+                    else {
+                        toolbar.style.width = '0px';
+                        toolStatus = false;
+                    };
+                 }
+                this.base.addEventHandler(beforeItem, 'mouseover', visibleTollBar);
+                this.base.addEventHandler(toolbar, 'mouseleave', visibleTollBar);
+            };
+        };
+        // 初始化
+        init() {
+            // 触发hook
+            this.options.onInit();
+            // 初始化数据
+            this.initData();
+            // 初始化尺寸
+            this.initSize();
+        };
+        initData() {
+            // 获取设备宽高
+            var {w, h} = this.base.getSViewportOffset();
+            this.store.equipmentW = w;
+            this.store.equipmentH = h;
+            // 剪裁框的尺寸
+            this.store.width = this.store.equipmentW * 0.7 || this.store.defaultWidth;
+            this.store.minwidth = this.store.equipmentW * 0.4 || this.store.defaultWidth * 0.9;
+            this.store.maxwidth = this.store.equipmentW * 0.9 || this.store.defaultWidth * 1.1;
+
+            console.log('initData:', this.store);
+            this.initSize();
+        };
+        // 初始化尺寸
+        initSize() {
+            // 设置编辑器尺寸
+            if (this.options.module === 'dialog') {
+                if (+this.store.equipmentW <= 460) {
+                    this.base.getEleById('_editor-body').style = 'width: 90vw;height:135vw';
+                    this.base.getEleById('_editor-toolBar').style = 'width: 70vw;';
+                }
+                else {
+                    this.base.getEleById('_editor-body').style = `width:${this.options.editorW}px;height:${this.options.editorH}px;`;
+                };
+            }
+            else {
+                if (+this.store.equipmentW <= 460) {
+                    this.base.getEleById('_editor-body').style = 'width: 90vw;height:135vw';
+                    this.base.getEleById('_editor-toolBar').style = 'width: 90vw;';
+                }
+                else {
+                    this.base.getEleById('_editor-body').style = `width:${this.options.editorW}px;height:${this.options.editorH}px;`;
+                    this.base.getEleById('_editor-toolBar').style = `width:${this.options.editorW}px;`;
+                };
+            };
+            // 设置裁剪框的宽高
+            document.getElementById('editor-box').style= `width:${this.store.width}px;height:${this.store.width}px;`;
+            this.base.getEleById('_editor-middle-box').style = `width:${this.options.editorW}px;height:${this.store.width + 4}px`;
+            this.base.getEleById('_editor-right').style = `width:${(this.options.editorW - this.store.width) / 2}px;`;
+            this.base.getEleById('_editor-left').style = `width:${(this.options.editorW - this.store.width) / 2}px;`;
+            this.base.getEleById('_editor-bottom').style = `width:${this.options.editorW}px;height:${(this.options.editorH - this.store.width) / 2}px;`;
+            this.base.getEleById('_editor-top').style = `width:${this.options.editorW}px;height:${(this.options.editorH - this.store.width) / 2}px;`;
         };
         
-    }
-}
+    };
+
+
+
+
+
+
+    let options = {
+        // 弹窗模式或则嵌入模式
+        module: 'dialog1',
+        // 主体编辑器容器id
+        id: 'editorBox',
+        // 编辑器工具容器id
+        toolid: 'toolBox',
+        editorW: 400,
+        editorH: 600,
+        // 渲染页面时触发hook
+        onRender: function () { 
+            console.log('render....');
+        },
+        onInit: function () { 
+            console.log('init...')
+         }
+    };
+    let editorInstance = new ImgEditor(options);
+};
