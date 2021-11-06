@@ -1,0 +1,121 @@
+* {
+    padding: 0;
+    margin: 0;
+    text-decoration: none;
+    list-style: none;
+}
+
+.editor-body {
+    width: 400px;
+    height: 600px;
+    background-color: black;
+    position: relative;
+}
+
+.editor-img {
+    width: 100%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+}
+
+.editor-content {
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    /* background-color: rgba(255, 0, 0, .5); */
+    z-index: 9;
+}
+
+.editor-top {
+    width: 100%;
+    height: calc(300px - 102px);
+    background-color: rgba(0, 0, 0, .7);
+}
+
+.editor-bottom {
+    width: 100%;
+    height: calc(300px - 102px);
+    background-color: rgba(0, 0, 0, .7);
+}
+
+.editor-middle-box {
+    width: 100%;
+    height: 204px;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+}
+
+.editor-right {
+    width: 98px;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.editor-left {
+    float: left;
+    width: 98px;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.editor-box {
+    float: left;
+    width: 200px;
+    height: 200px;
+    border: 2px solid white;
+}
+
+.editor-toolBar {
+    width: 400px;
+    height: 60px;
+    /* background-color: rgba(0, 0, 0, .8); */
+    border: 1px solid #333;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+}
+
+.toolbar-item {
+    width: 20%;
+    height: 100%;
+    cursor: pointer;
+    /* background-color: red; */
+}
+
+.toolBar-item-icon-box {
+    width: 100%;
+    height: 60%;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    /* background-color: chartreuse; */
+}
+
+.toolbar-item span {
+    display: block;
+}
+
+.toolBar-item-icon {
+    width: 30px;
+    height: 30px;
+    background-color: gold;
+}
+
+.toolBar-item-text {
+    height: 40%;
+    width: 100%;
+    text-align: center;
+    background-color: white;
+    font-size: 12px;
+    line-height: 1.2rem;
+}
+
+
+
+
+
