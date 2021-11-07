@@ -430,7 +430,8 @@ window.onload = function (){
                 imgMoveStart: false,
                 limitMove: false,
                 // 图片缩放
-                imgScale: 1
+                imgScale: 1,
+                rotateAngle: 0
 
             };
             console.log('options:', this.options);
@@ -460,28 +461,28 @@ window.onload = function (){
                                     '<canvas class="canvas"></canvas>' +
                                 '</div>';
 
-            var editorToolTpl = '<div class="editor-toolBar" id="' + $id_prefix+ '_editor-toolBar">' +
+            var editorToolTpl = '<div class="editor-toolBar" id="' + $id_prefix + '_editor-toolBar">' +
                                     '<div class="toolbar-item toolbar-item-before" id="' + $id_prefix+ '_toolbar-item-before">工具' +
                                     '</div>' +
-                                    '<div class="toolbar-item">' +
+                                    '<div class="toolbar-item" id="' + $id_prefix + '_tool-reiterate">' +
                                         '<p class="toolBar-item-icon-box">' +
                                             '<span class="toolBar-item-icon"></span>' +
                                         '</p>' +
                                         '<span class="toolBar-item-text">重选</span>' +
                                     '</div>' +
-                                    '<div class="toolbar-item" id="' + $id_prefix+ '_tool-redo">' +
+                                    '<div class="toolbar-item" id="' + $id_prefix + '_tool-redo">' +
                                         '<p class="toolBar-item-icon-box">' +
                                             '<span class="toolBar-item-icon"></span>'+
                                         '</p>' +
                                         '<span class="toolBar-item-text">撤销</span>' +
                                     '</div>' +
-                                    '<div class="toolbar-item">' +
+                                    '<div class="toolbar-item" id="' + $id_prefix + '_tool-rotate">' +
                                         '<p class="toolBar-item-icon-box">' +
                                             '<span class="toolBar-item-icon"></span>' +
                                         '</p>' +
                                         '<span class="toolBar-item-text">旋转</span>' +
                                     '</div>' +
-                                    '<div class="toolbar-item">' +
+                                    '<div class="toolbar-item" id="' + $id_prefix + '_tool-ok">' +
                                         '<p class="toolBar-item-icon-box">' +
                                             '<span class="toolBar-item-icon"></span>' +
                                         '</p>' +
@@ -682,6 +683,7 @@ window.onload = function (){
                     };
                     console.log('pc/移动端 单指移动：', me.store.imgTransForXY);
                     // 让图片移动
+                    // me.base.throttle(me.updateImgPosition('position'), 50);
                     me.updateImgPosition('position');
                 };
                 // console.log('当前鼠标位置1', me.store.imgmouseMoveP)
@@ -698,10 +700,10 @@ window.onload = function (){
                 me.detectionImgPos();
             };
             this.base.addEventHandler(editorBox, 'mousedown', ImgElemDownFn);
-            this.base.addEventHandler(editorBox, 'mousemove', this.base.throttle(ImgElemMoveFn, 300));
+            this.base.addEventHandler(editorBox, 'mousemove', this.base.throttle(ImgElemMoveFn, 50));
             this.base.addEventHandler(editorBox, 'mouseup', ImgElemUpFn);
             this.base.addEventHandler(editorBox, 'touchstart', ImgElemDownFn);
-            this.base.addEventHandler(editorBox, 'touchmove', this.base.throttle(ImgElemMoveFn, 300));
+            this.base.addEventHandler(editorBox, 'touchmove', this.base.throttle(ImgElemMoveFn, 50));
             this.base.addEventHandler(editorBox, 'touchend', ImgElemUpFn);
             // 3.工具栏行为_tool-redo
             // 撤销
@@ -710,7 +712,14 @@ window.onload = function (){
                 // 图片归位
                 me.setIngCenter('center');
             };
+            // 旋转
+            var rotateFn = function () {
+                console.log('rotate')
+                // 图片归位
+                me.setIngCenter('rotate');
+            };
             this.base.addEventHandler(this.base.getEleById('_tool-redo'), 'click', redoFn);
+            this.base.addEventHandler(this.base.getEleById('_tool-rotate'), 'click', rotateFn);
         };
         // 初始化
         init() {
@@ -849,6 +858,20 @@ window.onload = function (){
                     imgLeft = 0;
                 };
                 me.base.getEleById('_editor-img').style = `transform:translate3d(${imgLeft}px, ${imgTop}px, 0) scale(${me.store.imgScale})`;
+                me.store.rotateAngle = 0;
+            }
+            else if (type && type === 'rotate') {
+                me.store.rotateAngle = me.store.rotateAngle + 90;
+                // 存旋转角度记录的栈
+                me.store.rotateAngleArr = [];
+                var currentTransform = me.base.getEleById('_editor-img').style.transform;
+                var reg = /(\s|^)rotate\((\d*)deg\)(\s|$)/g;
+                if (reg.test(currentTransform)) {
+                    currentTransform = currentTransform.replace(reg, '');
+                };
+                currentTransform += ` rotate(${me.store.rotateAngle}deg)`;
+                me.store.rotateAngleArr.push(me.store.rotateAngle);
+                me.base.getEleById('_editor-img').style.transform = currentTransform;
             };
         };
         // 检图片边缘
