@@ -598,13 +598,15 @@ window.onload = function (){
                         x: parseInt(etype[1].clientX, 10),
                         y: parseInt(etype[1].clientY, 10)
                     }
+                    console.log(' 移动端  两指start:', etype);
                     me.store.imgmouseStartP.push(finger1, finger2);
                 }
-                else if (e.changedTouches) {// 移动端  单指
+                else if (e.changedTouches && e.changedTouches.length === 1) {// 移动端  单指
                     var finger1 = {
                         x: parseInt(etype[0].clientX, 10),
                         y: parseInt(etype[0].clientY, 10)
                     };
+                    console.log('移动端  单指start:', etype);
                     me.store.imgmouseStartP.push(finger1);
                 }
                 else {// pc
@@ -612,6 +614,7 @@ window.onload = function (){
                         x: parseInt(etype.clientX, 10),
                         y: parseInt(etype.clientY, 10)
                     };
+                    console.log('pc 单指start:', finger1);
                     me.store.imgmouseStartP.push(finger1);
                 };
                 // console.log('当前鼠标位置', e.changedTouches, me.store.imgmouseStartP)
@@ -631,7 +634,7 @@ window.onload = function (){
                         x: parseInt(etype[1].clientX, 10),
                         y: parseInt(etype[1].clientY, 10)
                     }
-                    console.log(' 移动端  两指start:', etype);
+                    console.log(' 移动端  两指move:', etype);
                     me.store.imgmouseMoveP.push(finger1, finger2);
                 }
                 else if (e.changedTouches && e.changedTouches.length === 1) { // 移动端  单指
@@ -639,7 +642,7 @@ window.onload = function (){
                         x: parseInt(etype[0].clientX, 10),
                         y: parseInt(etype[0].clientY, 10)
                     };
-                    console.log('移动端  单指start:', etype);
+                    console.log('移动端  单指move:', etype);
                     me.store.imgmouseMoveP.push(finger1);
                 }
                 else {// pc 单指
@@ -647,7 +650,7 @@ window.onload = function (){
                         x: parseInt(etype.clientX, 10),
                         y: parseInt(etype.clientY, 10)
                     };
-                    console.log('pc 单指start:', etype);
+                    console.log('pc 单指move:', finger1);
                     me.store.imgmouseMoveP.push(finger1);
                 };
                 // me.store.imgmouseMoveP = {x: parseInt(etype.clientX, 10), y: parseInt(etype.clientY, 10)};
@@ -677,7 +680,7 @@ window.onload = function (){
                         x: imgmouseMoveP['x'] - imgmouseStartP['x'],
                         y: imgmouseMoveP['y'] - imgmouseStartP['y']
                     };
-                    console.log('pc/移动端 单指移动：',  me.store.imgmouseStartP, imgmouseMoveP, me.store.imgTransForXY);
+                    console.log('pc/移动端 单指移动：', me.store.imgTransForXY);
                     // 让图片移动
                     me.updateImgPosition('position');
                 };
@@ -695,10 +698,10 @@ window.onload = function (){
                 me.detectionImgPos();
             };
             this.base.addEventHandler(editorBox, 'mousedown', ImgElemDownFn);
-            this.base.addEventHandler(editorBox, 'mousemove', this.base.throttle(ImgElemMoveFn, 150));
+            this.base.addEventHandler(editorBox, 'mousemove', this.base.throttle(ImgElemMoveFn, 300));
             this.base.addEventHandler(editorBox, 'mouseup', ImgElemUpFn);
             this.base.addEventHandler(editorBox, 'touchstart', ImgElemDownFn);
-            this.base.addEventHandler(editorBox, 'touchmove', this.base.throttle(ImgElemMoveFn, 150));
+            this.base.addEventHandler(editorBox, 'touchmove', this.base.throttle(ImgElemMoveFn, 300));
             this.base.addEventHandler(editorBox, 'touchend', ImgElemUpFn);
             // 3.工具栏行为_tool-redo
             // 撤销
@@ -797,7 +800,8 @@ window.onload = function (){
             var me = this;
             switch(type) {
                 case 'position':
-                    imgElem.style = `transform: translate(${me.store.imgTransForXY.x}px, ${me.store.imgTransForXY.y}px)`;
+                    // imgElem.style = `transform: translate(${me.store.imgTransForXY.x}px, ${me.store.imgTransForXY.y}px)`;
+                    imgElem.style = `transform:translate3d(${imgLeft}px, ${imgTop}px, 0) scale(${me.store.imgScale})`;
                     break;
                 case 'scale':
                     var resSacle = me.store.imgScale * scaleNum;
@@ -808,7 +812,24 @@ window.onload = function (){
         };
         // 图片居中
         setIngCenter() {
-            
+            var me = this;
+            this.base.getEleById('_editor-img').onload = function () { 
+                var imgWidth = me.base.getEleById('_editor-img').width;
+                var imgHeight = me.base.getEleById('_editor-img').height;
+                me.store.imgWidth = imgWidth;
+                me.store.imgHeight = imgHeight;
+                // 图片平移距离
+                if (+me.store.equipmentW <= 460) {
+                    var imgTop = ((me.store.equipmentW * me.store.editorProportion) / me.store.editorWH - me.store.imgHeight) / 2;
+                    var imgLeft = 0;
+                }
+                else {
+                    var imgTop = (me.options.editorH - me.store.imgHeight) / 2;
+                    var imgLeft = 0;
+                };
+                me.base.getEleById('_editor-img').style = `transform:translate3d(${imgLeft}px, ${imgTop}px, 0) scale(${me.store.imgScale})`;
+                // console.log('图片的宽高：', imgWidth, imgHeight);
+            };
         };
         // 检图片边缘
         detectionImgPos() {
@@ -845,7 +866,7 @@ window.onload = function (){
 
     let options = {
         // 弹窗模式或则嵌入模式
-        module: 'dialog',
+        module: 'dialog1',
         // 主体编辑器容器id
         id: 'editorBox',
         // 编辑器工具容器id
@@ -853,7 +874,8 @@ window.onload = function (){
         editorW: 400,
         editorH: 600,
         // 传入的图片
-        uploadImg: 'https://t7.baidu.com/it/u=1276199729,2028264694&fm=193&f=GIF',
+        uploadImg: 'https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fc-ssl.duitang.com%2Fuploads%2Fblog%2F202012%2F04%2F20201204182229_e1a0a.thumb.1000_0.jpeg&refer=http%3A%2F%2Fc-ssl.duitang.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1638869603&t=0ac37cac7c77e0e7253f4f0c8d6d8851',
+        // uploadImg: 'https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fb-ssl.duitang.com%2Fuploads%2Fitem%2F201608%2F12%2F20160812204518_SyX8M.thumb.700_0.jpeg&refer=http%3A%2F%2Fb-ssl.duitang.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1638869925&t=47cfa3559bb538068255d6bee03a379a',
         // 渲染页面时触发hook
         onRender: function () { 
             console.log('render....');
