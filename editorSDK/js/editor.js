@@ -112,7 +112,7 @@ window.onload = function (){
                 };
                 if (!timer) {
                     timer = setTimeout(function () { 
-                        self.apply(fn, ags);
+                        fn.apply(self, ags);
                         timer = null;
                     }, delay);
                 };
@@ -420,10 +420,17 @@ window.onload = function (){
                 // 编辑器工具主体的比例
                 editorToolProportion: 0.9,
                 // 图片行为参数
-                imgTransForX: 0,
-                imgTransForY: 0,
+                imgmouseStartP: [],
+                imgmouseMoveP: [],
+                imgTransForXY: [],
                 // 鼠标是否在编辑框内
                 fingerEenter: false,
+                // 是否图片移动开始结束
+                imgMoveFinish: false,
+                imgMoveStart: false,
+                limitMove: false,
+                // 图片缩放
+                imgScale: 1
 
             };
             console.log('options:', this.options);
@@ -462,7 +469,7 @@ window.onload = function (){
                                         '</p>' +
                                         '<span class="toolBar-item-text">重选</span>' +
                                     '</div>' +
-                                    '<div class="toolbar-item">' +
+                                    '<div class="toolbar-item" id="' + $id_prefix+ '_tool-redo">' +
                                         '<p class="toolBar-item-icon-box">' +
                                             '<span class="toolBar-item-icon"></span>'+
                                         '</p>' +
@@ -557,28 +564,150 @@ window.onload = function (){
                 this.base.addEventHandler(beforeItem, 'mouseover', visibleTollBar);
                 this.base.addEventHandler(toolbar, 'mouseleave', visibleTollBar);
             };
-            // 编辑框行为
+            // 1.编辑框行为
             var editorBox = document.getElementById('editor-box');
             var editorBoxEnterFn = function () { 
                 me.store.fingerEenter = true;
-                console.log('fingerEenter:', me.store.fingerEenter);
+                // console.log('fingerEenter:', me.store.fingerEenter);
             };
             var editorBoxLeaveFn = function () { 
                 me.store.fingerEenter = false;
-                console.log('fingerEenter:', me.store.fingerEenter);
+                // 关闭图片操作行为
+                me.store.imgMoveFinish = true;
+                me.store.imgMoveStart = false;
+                // console.log('fingerEenter:', me.store.fingerEenter);
             };
             this.base.addEventHandler(editorBox, 'mouseenter', editorBoxEnterFn);
             this.base.addEventHandler(editorBox, 'mouseleave', editorBoxLeaveFn);
-            // 图片行为editor-img
+            // 2.图片行为editor-img
             var imgElem = this.base.getEleById('_editor-img');
-            // 1、移动图片
-            var ImgElemDownFn = function (e) { 
+            //  移动图片
+            var ImgElemDownFn = function (e) {
                 // 当前鼠标位置
-                console.log('当前鼠标位置', e)
                 if (!me.store.fingerEenter ) return;
-            }
-            // this.base.addEventHandler(imgElem, 'click', ImgElemDownFn);
-            imgElem.addEventListener('click', function () { ImgElemDownFn() }, true);
+                me.store.imgMoveFinish = false;
+                me.store.imgMoveStart = true;
+                var etype = e.changedTouches || e;
+                // 双指放大
+                if (e.changedTouches && e.changedTouches.length > 1) {// 移动端  两指
+                    var finger1 = {
+                        x: parseInt(etype[0].clientX, 10),
+                        y: parseInt(etype[0].clientY, 10)
+                    };
+                    var finger2 = {
+                        x: parseInt(etype[1].clientX, 10),
+                        y: parseInt(etype[1].clientY, 10)
+                    }
+                    me.store.imgmouseStartP.push(finger1, finger2);
+                }
+                else if (e.changedTouches) {// 移动端  单指
+                    var finger1 = {
+                        x: parseInt(etype[0].clientX, 10),
+                        y: parseInt(etype[0].clientY, 10)
+                    };
+                    me.store.imgmouseStartP.push(finger1);
+                }
+                else {// pc
+                    var finger1 = {
+                        x: parseInt(etype.clientX, 10),
+                        y: parseInt(etype.clientY, 10)
+                    };
+                    me.store.imgmouseStartP.push(finger1);
+                };
+                // console.log('当前鼠标位置', e.changedTouches, me.store.imgmouseStartP)
+            };
+            var ImgElemMoveFn = function (e) {
+                // 当前鼠标位置
+                if (!me.store.fingerEenter ) return;
+                if (me.store.imgMoveFinish ) return;
+                if (!me.store.imgMoveStart ) return;
+                var etype = e.changedTouches || e;
+                if (e.changedTouches && e.changedTouches.length > 1) {// 移动端  两指
+                    var finger1 = {
+                        x: parseInt(etype[0].clientX, 10),
+                        y: parseInt(etype[0].clientY, 10)
+                    };
+                    var finger2 = {
+                        x: parseInt(etype[1].clientX, 10),
+                        y: parseInt(etype[1].clientY, 10)
+                    }
+                    console.log(' 移动端  两指start:', etype);
+                    me.store.imgmouseMoveP.push(finger1, finger2);
+                }
+                else if (e.changedTouches && e.changedTouches.length === 1) { // 移动端  单指
+                    var finger1 = {
+                        x: parseInt(etype[0].clientX, 10),
+                        y: parseInt(etype[0].clientY, 10)
+                    };
+                    console.log('移动端  单指start:', etype);
+                    me.store.imgmouseMoveP.push(finger1);
+                }
+                else {// pc 单指
+                    var finger1 = {
+                        x: parseInt(etype.clientX, 10),
+                        y: parseInt(etype.clientY, 10)
+                    };
+                    console.log('pc 单指start:', etype);
+                    me.store.imgmouseMoveP.push(finger1);
+                };
+                // me.store.imgmouseMoveP = {x: parseInt(etype.clientX, 10), y: parseInt(etype.clientY, 10)};
+                // 判断是移动或则缩放
+                if (e.changedTouches && e.changedTouches.length > 1) {// 移动端 双指缩放
+                    var imgmouseStartP1 = me.store.imgmouseStartP[0];
+                    var imgmouseStartP2 = me.store.imgmouseStartP[1];
+                    var imgmouseMoveP1 = me.store.imgmouseMoveP[0];
+                    var imgmouseMoveP2 = me.store.imgmouseMoveP[1];
+                    // 计算斜边
+                    var lenX1 = parseInt(imgmouseMoveP1.x - imgmouseStartP1.x, 10);
+                    var lenY1 = parseInt(imgmouseMoveP1.y - imgmouseStartP1.y, 10);
+                    var lenX2 = parseInt(imgmouseMoveP2.x - imgmouseStartP2.x, 10);
+                    var lenY2 = parseInt(imgmouseMoveP2.y - imgmouseStartP2.y, 10);
+                    var hypotenuse1 = Math.sqrt(Math.pow(lenX1, 2) + Math.pow(lenY1, 2));
+                    var hypotenuse2 = Math.sqrt(Math.pow(lenX2, 2) + Math.pow(lenY2, 2));
+                    // 缩放比例
+                    var scaleNum = hypotenuse2 / hypotenuse1;
+                    me.updateImgPosition('scale', scaleNum);
+                    console.log('移动端 两个手指缩放：',  me.store.imgmouseStartP, imgmouseMoveP);
+                }
+                else {// pc/移动 单指移动
+                    // 计算平移的XY
+                    var imgmouseStartP = me.store.imgmouseStartP[0];
+                    var imgmouseMoveP = me.store.imgmouseMoveP[0];
+                    me.store.imgTransForXY = {
+                        x: imgmouseMoveP['x'] - imgmouseStartP['x'],
+                        y: imgmouseMoveP['y'] - imgmouseStartP['y']
+                    };
+                    console.log('pc/移动端 单指移动：',  me.store.imgmouseStartP, imgmouseMoveP, me.store.imgTransForXY);
+                    // 让图片移动
+                    me.updateImgPosition('position');
+                };
+                // console.log('当前鼠标位置1', me.store.imgmouseMoveP)
+            };
+            var ImgElemUpFn = function (e) { 
+                // 当前鼠标位置
+                if (!me.store.fingerEenter ) return;
+                me.store.imgMoveFinish = true;
+                me.store.imgMoveStart = false;
+                me.store.imgmouseStartP = [];
+                me.store.imgmouseMoveP = [];
+                // console.log('当前鼠标位置2', me.store.imgTransForXY);
+                // 检测图片边缘
+                me.detectionImgPos();
+            };
+            this.base.addEventHandler(editorBox, 'mousedown', ImgElemDownFn);
+            this.base.addEventHandler(editorBox, 'mousemove', this.base.throttle(ImgElemMoveFn, 150));
+            this.base.addEventHandler(editorBox, 'mouseup', ImgElemUpFn);
+            this.base.addEventHandler(editorBox, 'touchstart', ImgElemDownFn);
+            this.base.addEventHandler(editorBox, 'touchmove', this.base.throttle(ImgElemMoveFn, 150));
+            this.base.addEventHandler(editorBox, 'touchend', ImgElemUpFn);
+            // 3.工具栏行为_tool-redo
+            // 撤销
+            var redoFn = function () {
+                console.log('redo')
+                // 图片归位
+                imgElem.style = `transform: translate( -50%, -50%)`;
+            };
+            this.base.addEventHandler(this.base.getEleById('_tool-redo'), 'click', redoFn);
         };
         // 初始化
         init() {
@@ -659,10 +788,53 @@ window.onload = function (){
                 this.base.getEleById('_editor-top').style = `width:${this.options.editorW}px;
                                                             height:${(this.options.editorH - this.store.height - 4) / 2}px`;
             };
+            // 图片居中
+            this.setIngCenter();
         };
         // 图片位置变化
-        updateImgPosition() {
-
+        updateImgPosition(type, scaleNum) {
+            var imgElem = this.base.getEleById('_editor-img');
+            var me = this;
+            switch(type) {
+                case 'position':
+                    imgElem.style = `transform: translate(${me.store.imgTransForXY.x}px, ${me.store.imgTransForXY.y}px)`;
+                    break;
+                case 'scale':
+                    var resSacle = me.store.imgScale * scaleNum;
+                    me.store.imgScale = resSacle;
+                    imgElem.style = `transform: scale(${resSacle});`;
+                    break;
+            }
+        };
+        // 图片居中
+        setIngCenter() {
+            
+        };
+        // 检图片边缘
+        detectionImgPos() {
+            if (this.store.limitMove) {
+                return;
+            }
+            let left = this.imgLeft;
+            let top = this.imgTop;
+            var scale = scale || this.scale;
+            let imgWidth = this.imgWidth;
+            let imgHeight = this.imgHeight;
+            if (this.angle / 90 % 2) {
+                imgWidth = this.imgHeight;
+                imgHeight = this.imgWidth;
+            }
+            left = this.cutLeft + imgWidth * scale / 2 >= left
+                ? left : this.cutLeft + imgWidth * scale / 2;
+            left = this.cutLeft + this.width - imgWidth * scale / 2 <= left
+                ? left : this.cutLeft + this.width - imgWidth * scale / 2;
+            top = this.cutTop + imgHeight * scale / 2 >= top
+                ? top : this.cutTop + imgHeight * scale / 2;
+            top = this.cutTop + this.height - imgHeight * scale / 2 <= top
+                ? top : this.cutTop + this.height - imgHeight * scale / 2;
+            this.imgLeft = left;
+            this.imgTop = top;
+            this.scale = scale;
         }
     };
 
