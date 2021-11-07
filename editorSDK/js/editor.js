@@ -809,8 +809,20 @@ window.onload = function (){
             var me = this;
             switch(type) {
                 case 'position':
-                    imgElem.style = `transform: translate(${me.store.imgTransForXY.x}px, ${me.store.imgTransForXY.y}px)`;
-                    // imgElem.style = `transform:translate3d(${imgLeft}px, ${imgTop}px, 0) scale(${me.store.imgScale})`;
+                    // translate3d(${imgLeft}px, ${imgTop}px, 0)
+                    var currentTransform = me.base.getEleById('_editor-img').style.transform;
+                    // 先保存当前scale和rotate
+                    var scaleReg=  /(\s|^)scale\((\d*)(\.?)(\d*)\)(\s|$)/g;
+                    var currentScaleEle = scaleReg.exec(currentTransform);
+                    var currentScale = currentScaleEle ? currentScaleEle[0] : '';
+                    var rotateReg = /(\s|^)rotate\((\d*)deg\)(\s|$)/g;
+                    var currentRotateEle = rotateReg.exec(currentTransform);
+                    var currentRotate = currentRotateEle ? currentRotateEle[0] : '';
+                    console.log('hello00:', currentScale, currentRotate);
+                    // 从新组合
+                    currentTransform = `translate3d(${me.store.imgTransForXY.x}px, ${me.store.imgTransForXY.y}px, 0)
+                                         ${currentScale} ${currentRotate}`
+                    imgElem.style.transform = currentTransform;;
                     break;
                 case 'scale':
                     var resSacle = me.store.imgScale * scaleNum;
