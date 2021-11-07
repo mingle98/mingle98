@@ -10,6 +10,7 @@
     height: 600px;
     background-color: black;
     position: relative;
+    overflow: hidden;
 }
 
 .editor-img {

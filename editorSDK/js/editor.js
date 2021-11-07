@@ -396,6 +396,8 @@ window.onload = function (){
                 editorH: options.editorH || 600,
                 // 编辑器工具容器id
                 toolContainerId: options.toolid,
+                // 传入的图片
+                uploadImg:  options.uploadImg || '',
                 onRender: options.onRender || function () {  },
                 onInit: options.onInit || function () {  },
             };
@@ -405,7 +407,23 @@ window.onload = function (){
                 width:0,
                 minwidth: 100,
                 maxwidth: 100,
-                defaultWidth: 200
+                height:0,
+                minheight: 100,
+                maxheight: 100,
+                defaultWidth: 200,
+                defaultHeight: 200,
+                // 编辑器主体的比例
+                editorProportion: 0.9,
+                editorProportion2: 0.7,
+                // 编辑器主体宽高比例
+                editorWH: 2/3,
+                // 编辑器工具主体的比例
+                editorToolProportion: 0.9,
+                // 图片行为参数
+                imgTransForX: 0,
+                imgTransForY: 0,
+                // 鼠标是否在编辑框内
+                fingerEenter: false,
 
             };
             console.log('options:', this.options);
@@ -422,7 +440,7 @@ window.onload = function (){
         // 存模版的方法
         get_tpl(file) {
             var editorBodyTpl = '<div class="editor-body" id="' + $id_prefix+ '_editor-body">' +
-                                    '<img class="editor-img" src="./img/u=1960663123,2805398451&fm=26&fmt=auto&gp=0.webp" alt="">' +
+                                    '<img class="editor-img" src="' + this.options.uploadImg + '" alt="" id="' + $id_prefix+ '_editor-img">' +
                                     '<div class="editor-content">' +
                                         '<div class="editor-top" id="' + $id_prefix+ '_editor-top"></div>' +
                                         '<div class="editor-middle-box" id="' + $id_prefix+ '_editor-middle-box">' +
@@ -520,13 +538,14 @@ window.onload = function (){
             if (this.options.module === 'dialog') {
                 var toolStatus = false;
                 // 展开折叠工具bar
-                var visibleTollBar = function () { 
+                var visibleTollBar = function () {
+                    if (me.options.module !== 'dialog') return;
                     if (!toolStatus) {
-                        if (me.options.module === 'dialog' && +me.store.equipmentW <= 460) {
-                            toolbar.style.width = '70vw'
+                        if (+me.store.equipmentW <= 460) {
+                            toolbar.style.width = `${me.store.equipmentW * me.store.editorProportion - 60}px`;
                         }
-                        else {
-                            toolbar.style.width = '338px'
+                        else if (+me.store.equipmentW > 460) {
+                            toolbar.style.width = `${me.options.editorW - 60}px`;
                         };
                         toolStatus = true;
                     }
@@ -538,6 +557,28 @@ window.onload = function (){
                 this.base.addEventHandler(beforeItem, 'mouseover', visibleTollBar);
                 this.base.addEventHandler(toolbar, 'mouseleave', visibleTollBar);
             };
+            // 编辑框行为
+            var editorBox = document.getElementById('editor-box');
+            var editorBoxEnterFn = function () { 
+                me.store.fingerEenter = true;
+                console.log('fingerEenter:', me.store.fingerEenter);
+            };
+            var editorBoxLeaveFn = function () { 
+                me.store.fingerEenter = false;
+                console.log('fingerEenter:', me.store.fingerEenter);
+            };
+            this.base.addEventHandler(editorBox, 'mouseenter', editorBoxEnterFn);
+            this.base.addEventHandler(editorBox, 'mouseleave', editorBoxLeaveFn);
+            // 图片行为editor-img
+            var imgElem = this.base.getEleById('_editor-img');
+            // 1、移动图片
+            var ImgElemDownFn = function (e) { 
+                // 当前鼠标位置
+                console.log('当前鼠标位置', e)
+                if (!me.store.fingerEenter ) return;
+            }
+            // this.base.addEventHandler(imgElem, 'click', ImgElemDownFn);
+            imgElem.addEventListener('click', function () { ImgElemDownFn() }, true);
         };
         // 初始化
         init() {
@@ -554,10 +595,22 @@ window.onload = function (){
             this.store.equipmentW = w;
             this.store.equipmentH = h;
             // 剪裁框的尺寸
-            this.store.width = this.store.equipmentW * 0.7 || this.store.defaultWidth;
-            this.store.minwidth = this.store.equipmentW * 0.4 || this.store.defaultWidth * 0.9;
-            this.store.maxwidth = this.store.equipmentW * 0.9 || this.store.defaultWidth * 1.1;
-
+            if (+this.store.equipmentW <= 460) {
+                this.store.width = this.store.equipmentW * this.store.editorProportion * 0.7 || this.store.defaultWidth;
+                this.store.minwidth = this.store.equipmentW * this.store.editorProportion * 0.4 || this.store.defaultWidth * 0.9;
+                this.store.maxwidth = this.store.equipmentW * this.store.editorProportion * 0.9 || this.store.defaultWidth * 1.1;
+                this.store.height = this.store.equipmentW * this.store.editorProportion * 0.7 || this.store.defaultHeight;
+                this.store.minheight = this.store.equipmentW * this.store.editorProportion * 0.4 || this.store.defaultHeight * 0.9;
+                this.store.maxheight = this.store.equipmentW * this.store.editorProportion * 0.9 || this.store.defaultHeight * 1.1;
+            }
+            else {
+                this.store.width = this.options.editorW * 0.7 || this.store.defaultWidth;
+                this.store.minwidth = this.options.editorW * 0.4 || this.store.defaultWidth * 0.9;
+                this.store.maxwidth = this.options.editorW * 0.9 || this.store.defaultWidth * 1.1;
+                this.store.height = this.options.editorW * 0.7 || this.store.defaultHeight;
+                this.store.minheight = this.options.editorW * 0.4 || this.store.defaultHeight * 0.9;
+                this.store.maxheight = this.options.editorW * 0.9 || this.store.defaultHeight * 1.1;
+            };
             console.log('initData:', this.store);
             this.initSize();
         };
@@ -566,32 +619,51 @@ window.onload = function (){
             // 设置编辑器尺寸
             if (this.options.module === 'dialog') {
                 if (+this.store.equipmentW <= 460) {
-                    this.base.getEleById('_editor-body').style = 'width: 90vw;height:135vw';
-                    this.base.getEleById('_editor-toolBar').style = 'width: 70vw;';
+                    this.base.getEleById('_editor-body').style = `width:${this.store.equipmentW * this.store.editorProportion}px;
+                                                                height:${(this.store.equipmentW * this.store.editorProportion) / this.store.editorWH}px`;
+                    this.base.getEleById('_editor-toolBar').style = `width:${this.store.equipmentW * this.store.editorProportion - 60}px`;
                 }
                 else {
                     this.base.getEleById('_editor-body').style = `width:${this.options.editorW}px;height:${this.options.editorH}px;`;
+                    this.base.getEleById('_editor-toolBar').style = `width:${this.options.editorW - 60}px`;
                 };
             }
             else {
                 if (+this.store.equipmentW <= 460) {
-                    this.base.getEleById('_editor-body').style = 'width: 90vw;height:135vw';
-                    this.base.getEleById('_editor-toolBar').style = 'width: 90vw;';
+                    this.base.getEleById('_editor-body').style = `width:${this.store.equipmentW * this.store.editorProportion}px;
+                                                                height:${(this.store.equipmentW * this.store.editorProportion) / this.store.editorWH}px`;
+                    this.base.getEleById('_editor-toolBar').style = `width:${this.store.equipmentW * this.store.editorProportion}px`;
                 }
                 else {
                     this.base.getEleById('_editor-body').style = `width:${this.options.editorW}px;height:${this.options.editorH}px;`;
                     this.base.getEleById('_editor-toolBar').style = `width:${this.options.editorW}px;`;
                 };
             };
-            // 设置裁剪框的宽高
-            document.getElementById('editor-box').style= `width:${this.store.width}px;height:${this.store.width}px;`;
-            this.base.getEleById('_editor-middle-box').style = `width:${this.options.editorW}px;height:${this.store.width + 4}px`;
-            this.base.getEleById('_editor-right').style = `width:${(this.options.editorW - this.store.width) / 2}px;`;
-            this.base.getEleById('_editor-left').style = `width:${(this.options.editorW - this.store.width) / 2}px;`;
-            this.base.getEleById('_editor-bottom').style = `width:${this.options.editorW}px;height:${(this.options.editorH - this.store.width) / 2}px;`;
-            this.base.getEleById('_editor-top').style = `width:${this.options.editorW}px;height:${(this.options.editorH - this.store.width) / 2}px;`;
+            // 设置裁剪框的宽高和居中
+            document.getElementById('editor-box').style= `width:${this.store.width}px;height:${this.store.height}px;`;
+            if (+this.store.equipmentW <= 460) {
+                this.base.getEleById('_editor-middle-box').style = `width:${this.store.equipmentW * this.store.editorProportion}px;height:${this.store.height + 4}px`;
+                this.base.getEleById('_editor-right').style = `width:${(this.store.equipmentW * this.store.editorProportion - this.store.width - 4) / 2}px;`;
+                this.base.getEleById('_editor-left').style = `width:${(this.store.equipmentW * this.store.editorProportion - this.store.width - 4) / 2}px;`;
+                this.base.getEleById('_editor-bottom').style = `width:${this.store.equipmentW * this.store.editorProportion}px;
+                                                                height:${((this.store.equipmentW * this.store.editorProportion) / this.store.editorWH - this.store.height - 4) / 2}px`;
+                this.base.getEleById('_editor-top').style = `width:${this.store.equipmentW * this.store.editorProportion}px;
+                                                            height:${((this.store.equipmentW * this.store.editorProportion) / this.store.editorWH - this.store.height - 4) / 2}px`;
+            }
+            else {
+                this.base.getEleById('_editor-middle-box').style = `width:${this.options.editorW}px;height:${this.store.height + 4}px`;
+                this.base.getEleById('_editor-right').style = `width:${(this.options.editorW - this.store.width - 4) / 2}px;`;
+                this.base.getEleById('_editor-left').style = `width:${(this.options.editorW - this.store.width - 4) / 2}px;`;
+                this.base.getEleById('_editor-bottom').style = `width:${this.options.editorW}px;
+                                                                height:${(this.options.editorH - this.store.height - 4) / 2}px`;
+                this.base.getEleById('_editor-top').style = `width:${this.options.editorW}px;
+                                                            height:${(this.options.editorH - this.store.height - 4) / 2}px`;
+            };
         };
-        
+        // 图片位置变化
+        updateImgPosition() {
+
+        }
     };
 
 
@@ -601,13 +673,15 @@ window.onload = function (){
 
     let options = {
         // 弹窗模式或则嵌入模式
-        module: 'dialog1',
+        module: 'dialog',
         // 主体编辑器容器id
         id: 'editorBox',
         // 编辑器工具容器id
         toolid: 'toolBox',
         editorW: 400,
         editorH: 600,
+        // 传入的图片
+        uploadImg: 'https://t7.baidu.com/it/u=1276199729,2028264694&fm=193&f=GIF',
         // 渲染页面时触发hook
         onRender: function () { 
             console.log('render....');
