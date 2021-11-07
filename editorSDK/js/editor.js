@@ -708,7 +708,7 @@ window.onload = function (){
             var redoFn = function () {
                 console.log('redo')
                 // 图片归位
-                imgElem.style = `transform: translate( -50%, -50%)`;
+                me.setIngCenter('center');
             };
             this.base.addEventHandler(this.base.getEleById('_tool-redo'), 'click', redoFn);
         };
@@ -800,8 +800,8 @@ window.onload = function (){
             var me = this;
             switch(type) {
                 case 'position':
-                    // imgElem.style = `transform: translate(${me.store.imgTransForXY.x}px, ${me.store.imgTransForXY.y}px)`;
-                    imgElem.style = `transform:translate3d(${imgLeft}px, ${imgTop}px, 0) scale(${me.store.imgScale})`;
+                    imgElem.style = `transform: translate(${me.store.imgTransForXY.x}px, ${me.store.imgTransForXY.y}px)`;
+                    // imgElem.style = `transform:translate3d(${imgLeft}px, ${imgTop}px, 0) scale(${me.store.imgScale})`;
                     break;
                 case 'scale':
                     var resSacle = me.store.imgScale * scaleNum;
@@ -811,24 +811,44 @@ window.onload = function (){
             }
         };
         // 图片居中
-        setIngCenter() {
+        setIngCenter(type) {
             var me = this;
-            this.base.getEleById('_editor-img').onload = function () { 
+            var imgTop;
+            var imgLeft;
+            if (!type) {
+                this.base.getEleById('_editor-img').onload = function () {
+                    var imgWidth = me.base.getEleById('_editor-img').width;
+                    var imgHeight = me.base.getEleById('_editor-img').height;
+                    me.store.imgWidth = imgWidth;
+                    me.store.imgHeight = imgHeight;
+                    // 图片平移距离
+                    if (+me.store.equipmentW <= 460) {
+                        imgTop = ((me.store.equipmentW * me.store.editorProportion) / me.store.editorWH - me.store.imgHeight) / 2;
+                        imgLeft = 0;
+                    }
+                    else {
+                        imgTop = (me.options.editorH - me.store.imgHeight) / 2;
+                        imgLeft = 0;
+                    };
+                    me.base.getEleById('_editor-img').style = `transform:translate3d(${imgLeft}px, ${imgTop}px, 0) scale(${me.store.imgScale})`;
+                };
+                // console.log('图片的宽高：', imgWidth, imgHeight);
+            }
+            else if (type && type === 'center') {
                 var imgWidth = me.base.getEleById('_editor-img').width;
                 var imgHeight = me.base.getEleById('_editor-img').height;
                 me.store.imgWidth = imgWidth;
                 me.store.imgHeight = imgHeight;
                 // 图片平移距离
                 if (+me.store.equipmentW <= 460) {
-                    var imgTop = ((me.store.equipmentW * me.store.editorProportion) / me.store.editorWH - me.store.imgHeight) / 2;
-                    var imgLeft = 0;
+                    imgTop = ((me.store.equipmentW * me.store.editorProportion) / me.store.editorWH - me.store.imgHeight) / 2;
+                    imgLeft = 0;
                 }
                 else {
-                    var imgTop = (me.options.editorH - me.store.imgHeight) / 2;
-                    var imgLeft = 0;
+                    imgTop = (me.options.editorH - me.store.imgHeight) / 2;
+                    imgLeft = 0;
                 };
                 me.base.getEleById('_editor-img').style = `transform:translate3d(${imgLeft}px, ${imgTop}px, 0) scale(${me.store.imgScale})`;
-                // console.log('图片的宽高：', imgWidth, imgHeight);
             };
         };
         // 检图片边缘
