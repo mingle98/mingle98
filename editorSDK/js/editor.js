@@ -374,6 +374,19 @@ window.onload = function (){
                     }
                 }
             }
+        };
+        // 17.判断是否为pc浏览器
+        isPC() {
+            var userAgentInfo = navigator.userAgent;
+            var Agents = ['Android', 'iPhone', 'SymbianOS', 'Windows Phone', 'iPad', 'iPod'];
+            var flag = true;
+            for (var v = 0; v < Agents.length; v++) {
+                if (userAgentInfo.indexOf(Agents[v]) > 0) {
+                    flag = false;
+                    break;
+                }
+            }
+            return flag;
         }
     };
 
@@ -391,15 +404,20 @@ window.onload = function (){
                 module: options.module || 'dialog',
                 // 主体编辑器容器id
                 containerId: options.id,
-                // 主体编辑器的宽高
+                // 主体编辑器的宽高(width>460px时候该配置生效)
                 editorW: options.editorW || 400,
                 editorH: options.editorH || 600,
                 // 编辑器工具容器id
                 toolContainerId: options.toolid,
                 // 传入的图片
-                uploadImg:  options.uploadImg || '',
+                uploadImg: options.uploadImg || '',
+                // 图片的放大最大(小)比例
+                imgMaxScale: options.imgMaxScale || 3,
+                imgMinScale: options.imgMinScale || 0.5,
                 onRender: options.onRender || function () {  },
                 onInit: options.onInit || function () {  },
+                onScale: options.onScale || function () {  },
+                onRedo: options.onRedo || function () {  },
             };
             // 内部数据
             this.store = {
@@ -413,13 +431,21 @@ window.onload = function (){
                 defaultWidth: 200,
                 defaultHeight: 200,
                 // 编辑器主体的比例
-                editorProportion: 0.9,
-                editorProportion2: 0.7,
+                editorProportion: options.editorProportion || 0.9,
                 // 编辑器主体宽高比例
-                editorWH: 2/3,
+                editorWH: options.editorWH || 2/3,
                 // 编辑器工具主体的比例
-                editorToolProportion: 0.9,
+                editorToolProportion: options.editorToolProportion || options.editorProportion || 0.9,
+                // --------------
                 // 图片行为参数
+                // 图片平移的top
+                imgTop: 0,
+                // 图片平移的legt:
+                imgLeft: 0,
+                // 图片缩放
+                imgScale: 1,
+                // 图片旋转角度
+                rotateAngle: 0,
                 imgmouseStartP: [],
                 imgmouseMoveP: [],
                 imgTransForXY: [],
@@ -429,9 +455,12 @@ window.onload = function (){
                 imgMoveFinish: false,
                 imgMoveStart: false,
                 limitMove: false,
-                // 图片缩放
-                imgScale: 1,
-                rotateAngle: 0
+                // --------------
+                // 剪裁框的位置数据
+                trimmingBoxTop: 0,
+                trimmingBoxBottom: 0,
+                trimmingBoxleft: 0,
+                trimmingBoxright: 0,
 
             };
             console.log('options:', this.options);
@@ -464,7 +493,7 @@ window.onload = function (){
             var editorToolTpl = '<div class="editor-toolBar" id="' + $id_prefix + '_editor-toolBar">' +
                                     '<div class="toolbar-item toolbar-item-before" id="' + $id_prefix+ '_toolbar-item-before">工具' +
                                     '</div>' +
-                                    '<div class="toolbar-item" id="' + $id_prefix + '_tool-reiterate">' +
+                                    '<div class="toolbar-item" id="' + $id_prefix + '_tool-select">' +
                                         '<p class="toolBar-item-icon-box">' +
                                             '<span class="toolBar-item-icon"></span>' +
                                         '</p>' +
@@ -670,7 +699,7 @@ window.onload = function (){
                     var hypotenuse2 = Math.sqrt(Math.pow(lenX2, 2) + Math.pow(lenY2, 2));
                     // 缩放比例
                     var scaleNum = hypotenuse2 / hypotenuse1;
-                    me.updateImgPosition('scale', scaleNum);
+                    me.updateImgChange('scale', scaleNum);
                     console.log('移动端 两个手指缩放：',  me.store.imgmouseStartP, imgmouseMoveP);
                 }
                 else {// pc/移动 单指移动
@@ -683,8 +712,8 @@ window.onload = function (){
                     };
                     console.log('pc/移动端 单指移动：', me.store.imgTransForXY);
                     // 让图片移动
-                    // me.base.throttle(me.updateImgPosition('position'), 50);
-                    me.updateImgPosition('position');
+                    // me.base.throttle(me.updateImgChange('position'), 50);
+                    me.updateImgChange('position');
                 };
                 // console.log('当前鼠标位置1', me.store.imgmouseMoveP)
             };
@@ -697,7 +726,7 @@ window.onload = function (){
                 me.store.imgmouseMoveP = [];
                 // console.log('当前鼠标位置2', me.store.imgTransForXY);
                 // 检测图片边缘
-                me.detectionImgPos();
+                // me.detectionImgPos();
             };
             this.base.addEventHandler(editorBox, 'mousedown', ImgElemDownFn);
             this.base.addEventHandler(editorBox, 'mousemove', this.base.throttle(ImgElemMoveFn, 50));
@@ -708,18 +737,30 @@ window.onload = function (){
             // 3.工具栏行为_tool-redo
             // 撤销
             var redoFn = function () {
-                console.log('redo')
+                console.log('redo');
+                // 触发hook
+                me.options.onRedo();
                 // 图片归位
-                me.setIngCenter('center');
+                me.setImgCenter('center');
+                // 缩放复原
+                me.updateImgChange('scale', 0);
             };
             // 旋转
             var rotateFn = function () {
                 console.log('rotate')
                 // 图片归位
-                me.setIngCenter('rotate');
+                me.setImgCenter('rotate');
+            };
+            // 选择
+            var selectFn = function () {
+                console.log('select');
+                // 触发hook
+                me.options.onScale();
+                me.updateImgChange('scale', 1.5);
             };
             this.base.addEventHandler(this.base.getEleById('_tool-redo'), 'click', redoFn);
             this.base.addEventHandler(this.base.getEleById('_tool-rotate'), 'click', rotateFn);
+            this.base.addEventHandler(this.base.getEleById('_tool-select'), 'click', selectFn);
         };
         // 初始化
         init() {
@@ -790,6 +831,11 @@ window.onload = function (){
                                                                 height:${((this.store.equipmentW * this.store.editorProportion) / this.store.editorWH - this.store.height - 4) / 2}px`;
                 this.base.getEleById('_editor-top').style = `width:${this.store.equipmentW * this.store.editorProportion}px;
                                                             height:${((this.store.equipmentW * this.store.editorProportion) / this.store.editorWH - this.store.height - 4) / 2}px`;
+                // 更新数据
+                this.store.trimmingBoxleft = (this.store.equipmentW * this.store.editorProportion - this.store.width - 4) / 2;
+                this.store.trimmingBoxright = (this.store.equipmentW * this.store.editorProportion - this.store.width - 4) / 2;
+                this.store.trimmingBoxTop = ((this.store.equipmentW * this.store.editorProportion) / this.store.editorWH - this.store.height - 4) / 2;
+                this.store.trimmingBoxBottom = ((this.store.equipmentW * this.store.editorProportion) / this.store.editorWH - this.store.height - 4) / 2;
             }
             else {
                 this.base.getEleById('_editor-middle-box').style = `width:${this.options.editorW}px;height:${this.store.height + 4}px`;
@@ -799,44 +845,76 @@ window.onload = function (){
                                                                 height:${(this.options.editorH - this.store.height - 4) / 2}px`;
                 this.base.getEleById('_editor-top').style = `width:${this.options.editorW}px;
                                                             height:${(this.options.editorH - this.store.height - 4) / 2}px`;
+                 // 更新数据
+                 this.store.trimmingBoxleft = (this.options.editorW - this.store.width - 4) / 2;
+                 this.store.trimmingBoxright = (this.options.editorW - this.store.width - 4) / 2;
+                 this.store.trimmingBoxTop = (this.options.editorH - this.store.height - 4) / 2;
+                 this.store.trimmingBoxBottom = (this.options.editorH - this.store.height - 4) / 2;
             };
             // 图片居中
-            this.setIngCenter();
+            this.setImgCenter();
         };
-        // 图片位置变化
-        updateImgPosition(type, scaleNum) {
+        // 图片变化更新
+        updateImgChange(type, scaleNum) {
             var imgElem = this.base.getEleById('_editor-img');
             var me = this;
             switch(type) {
                 case 'position':
                     // translate3d(${imgLeft}px, ${imgTop}px, 0)
-                    var currentTransform = me.base.getEleById('_editor-img').style.transform;
+                    // var currentTransform = me.base.getEleById('_editor-img').style.transform;
                     // 先保存当前scale和rotate
-                    var scaleReg=  /(\s|^)scale\((\d*)(\.?)(\d*)\)(\s|$)/g;
-                    var currentScaleEle = scaleReg.exec(currentTransform);
-                    var currentScale = currentScaleEle ? currentScaleEle[0] : '';
-                    var rotateReg = /(\s|^)rotate\((\d*)deg\)(\s|$)/g;
-                    var currentRotateEle = rotateReg.exec(currentTransform);
-                    var currentRotate = currentRotateEle ? currentRotateEle[0] : '';
-                    console.log('hello00:', currentScale, currentRotate);
+                    // var scaleReg=  /(\s|^)scale\((\d*)(\.?)(\d*)\)(\s|$)/g;
+                    // var currentScaleEle = scaleReg.exec(currentTransform);
+                    // var currentScale = currentScaleEle ? currentScaleEle[0] : '';
+                    // var rotateReg = /(\s|^)rotate\((\d*)deg\)(\s|$)/g;
+                    // var currentRotateEle = rotateReg.exec(currentTransform);
+                    // var currentRotate = currentRotateEle ? currentRotateEle[0] : '';
+                    // console.log('hello00:', currentScale, currentRotate);
                     // 从新组合
-                    currentTransform = `translate3d(${me.store.imgTransForXY.x}px, ${me.store.imgTransForXY.y}px, 0)
-                                         ${currentScale} ${currentRotate}`
-                    imgElem.style.transform = currentTransform;;
+                    var currentTransform = '';
+                    // 变化后的imgLeft、imgTop
+                    console.log('position=>', me.store.imgLeft, me.store.imgTop)
+                    var afterImgLeft = me.store.imgLeft + me.store.imgTransForXY.x;
+                    var afterImgTop = me.store.imgTop + me.store.imgTransForXY.y;
+                    // 更新数据
+                    me.store.imgLeft = afterImgLeft;
+                    me.store.imgTop = afterImgTop;
+                    // me.detectionImgPos();
+                    currentTransform = `transform:translate3d(${afterImgLeft}px, ${afterImgTop}px, 0) scale(${me.store.imgScale}) rotate(${me.store.rotateAngle}deg)`;
+                    imgElem.style.transform = currentTransform;
                     break;
                 case 'scale':
-                    var resSacle = me.store.imgScale * scaleNum;
-                    me.store.imgScale = resSacle;
-                    imgElem.style = `transform: scale(${resSacle});`;
+                    var resSacle = (scaleNum === 0) ? 1 : me.store.imgScale * scaleNum;
+                    // 更新数据
+                    if (+resSacle > me.options.imgMaxScale) {
+                        me.store.imgScale = me.options.imgMaxScale;
+                    }
+                    else if (+resSacle < me.options.imgMinScale) {
+                        me.store.imgScale = me.options.imgMinScale;
+                    }
+                    else {
+                        me.store.imgScale = resSacle;
+                    };
+                    var currentTransform = me.base.getEleById('_editor-img').style.transform;
+                    var reg = /(\s|^)scale\((\d*\.?\d*)\)(\s|$)/g;
+                    if (reg.test(currentTransform)) {
+                        currentTransform = currentTransform.replace(reg, '');
+                    };
+                    currentTransform += ` scale(${me.store.imgScale})`;
+                    me.base.getEleById('_editor-img').style.transform = currentTransform;
+                    break;
+                default:
+                    console.log('操作错误');
                     break;
             }
         };
         // 图片居中
-        setIngCenter(type) {
+        setImgCenter(type) {
             var me = this;
             var imgTop;
             var imgLeft;
             if (!type) {
+                // 初始化居中
                 this.base.getEleById('_editor-img').onload = function () {
                     var imgWidth = me.base.getEleById('_editor-img').width;
                     var imgHeight = me.base.getEleById('_editor-img').height;
@@ -851,6 +929,9 @@ window.onload = function (){
                         imgTop = (me.options.editorH - me.store.imgHeight) / 2;
                         imgLeft = 0;
                     };
+                    // 更新数据
+                    me.store.imgLeft = imgLeft;
+                    me.store.imgTop= imgTop;
                     me.base.getEleById('_editor-img').style = `transform:translate3d(${imgLeft}px, ${imgTop}px, 0) scale(${me.store.imgScale})`;
                 };
                 // console.log('图片的宽高：', imgWidth, imgHeight);
@@ -869,49 +950,42 @@ window.onload = function (){
                     imgTop = (me.options.editorH - me.store.imgHeight) / 2;
                     imgLeft = 0;
                 };
+                // 更新数据
+                me.store.imgLeft = imgLeft;
+                me.store.imgTop= imgTop;
                 me.base.getEleById('_editor-img').style = `transform:translate3d(${imgLeft}px, ${imgTop}px, 0) scale(${me.store.imgScale})`;
                 me.store.rotateAngle = 0;
             }
             else if (type && type === 'rotate') {
+                // 更新数据
                 me.store.rotateAngle = me.store.rotateAngle + 90;
-                // 存旋转角度记录的栈
-                me.store.rotateAngleArr = [];
                 var currentTransform = me.base.getEleById('_editor-img').style.transform;
                 var reg = /(\s|^)rotate\((\d*)deg\)(\s|$)/g;
                 if (reg.test(currentTransform)) {
                     currentTransform = currentTransform.replace(reg, '');
                 };
                 currentTransform += ` rotate(${me.store.rotateAngle}deg)`;
-                me.store.rotateAngleArr.push(me.store.rotateAngle);
                 me.base.getEleById('_editor-img').style.transform = currentTransform;
             };
         };
         // 检图片边缘
-        detectionImgPos() {
+        detectionImgPos(type) {
+            var me = this;
             if (this.store.limitMove) {
                 return;
-            }
-            let left = this.imgLeft;
-            let top = this.imgTop;
-            var scale = scale || this.scale;
-            let imgWidth = this.imgWidth;
-            let imgHeight = this.imgHeight;
-            if (this.angle / 90 % 2) {
-                imgWidth = this.imgHeight;
-                imgHeight = this.imgWidth;
-            }
-            left = this.cutLeft + imgWidth * scale / 2 >= left
-                ? left : this.cutLeft + imgWidth * scale / 2;
-            left = this.cutLeft + this.width - imgWidth * scale / 2 <= left
-                ? left : this.cutLeft + this.width - imgWidth * scale / 2;
-            top = this.cutTop + imgHeight * scale / 2 >= top
-                ? top : this.cutTop + imgHeight * scale / 2;
-            top = this.cutTop + this.height - imgHeight * scale / 2 <= top
-                ? top : this.cutTop + this.height - imgHeight * scale / 2;
-            this.imgLeft = left;
-            this.imgTop = top;
-            this.scale = scale;
-        }
+            };
+            // 左边界
+            me.store.imgLeft = Math.abs(me.store.imgLeft) > Math.abs(me.store.trimmingBoxleft)
+            ? me.store.trimmingBoxleft : me.store.imgLeft;
+            // 上边界
+            me.store.imgTop = Math.abs(me.store.imgTop) > Math.abs(me.store.trimmingBoxTop)
+                        ? me.store.trimmingBoxTop : me.store.imgTop;
+            me.base.getEleById('_editor-img').style = `transform:translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale})`;
+        };
+        // 裁剪框
+        updateEditorBoxChange() {
+
+        };
     };
 
 
@@ -928,6 +1002,12 @@ window.onload = function (){
         toolid: 'toolBox',
         editorW: 400,
         editorH: 600,
+        // 编辑器主体的width（视口宽<460px生效，默认0.9）
+        editorProportion: 0.9,
+        // 编辑器工具主体的width（视口宽<460px生效，默认0.9）
+        // editorToolProportion: 0.6,
+        // 编辑器主体宽高比例（视口宽<460px生效，默认2/3）
+        editorWH: 2/3,
         // 传入的图片
         uploadImg: 'https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fc-ssl.duitang.com%2Fuploads%2Fblog%2F202012%2F04%2F20201204182229_e1a0a.thumb.1000_0.jpeg&refer=http%3A%2F%2Fc-ssl.duitang.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1638869603&t=0ac37cac7c77e0e7253f4f0c8d6d8851',
         // uploadImg: 'https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fb-ssl.duitang.com%2Fuploads%2Fitem%2F201608%2F12%2F20160812204518_SyX8M.thumb.700_0.jpeg&refer=http%3A%2F%2Fb-ssl.duitang.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1638869925&t=47cfa3559bb538068255d6bee03a379a',
@@ -937,7 +1017,15 @@ window.onload = function (){
         },
         onInit: function () { 
             console.log('init...')
-         }
+        },
+        // 缩放动作发生前触发
+        onScale: function () { 
+            console.log('onScale...')
+        },
+        // 撤销动作发生前触发
+        onRedo: function () { 
+            console.log('onRedo...')
+        },
     };
     let editorInstance = new ImgEditor(options);
 };
