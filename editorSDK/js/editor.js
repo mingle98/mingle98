@@ -499,8 +499,8 @@ window.onload = function (){
                                     '<div class="editor-content">' +
                                         '<div class="editor-top" id="' + $id_prefix+ '_editor-top">' +
                                             '<div class="editor-1-arrowBox" id="' + $id_prefix + '_editor-1-arrowBox">' +
-                                                '<div class="editor-top-arrow arrow" id="' + $id_prefix + '_editor-top-arrow"></div>' +
-                                                '<div class="editor-bottom-arrow arrow" id="' + $id_prefix + '_editor-bottom-arrow"></div>' +
+                                                '<div class="editor-big-icon arrow" id="' + $id_prefix + '_editor-big-icon"></div>' +
+                                                '<div class="editor-small-icon arrow" id="' + $id_prefix + '_editor-small-icon"></div>' +
                                             '</div>' +
                                         '</div>' +
                                         '<div class="editor-middle-box" id="' + $id_prefix + '_editor-middle-box">' +
@@ -509,7 +509,9 @@ window.onload = function (){
                                             '<div class="editor-left" id="' + $id_prefix+ '_editor-left"></div>' +
                                         '</div>' +
                                         '<div class="editor-bottom" id="' + $id_prefix+ '_editor-bottom">' + 
-                                            '<div class="editor-2-arrowBox" id="' + $id_prefix + '_editor-2-arrowBox">' + 
+                                            '<div class="editor-2-arrowBox" id="' + $id_prefix + '_editor-2-arrowBox">' +
+                                                '<div class="editor-top-arrow arrow" id="' + $id_prefix + '_editor-top-arrow"></div>' +
+                                                '<div class="editor-bottom-arrow arrow" id="' + $id_prefix + '_editor-bottom-arrow"></div>' +
                                                 '<div class="editor-left-arrow arrow" id="' + $id_prefix + '_editor-left-arrow"></div>' +
                                                 '<div class="editor-right-arrow arrow" id="' + $id_prefix + '_editor-right-arrow"></div>' +
                                             '</div>' +
@@ -803,9 +805,6 @@ window.onload = function (){
             // 选择
             var selectFn = function () {
                 console.log('select');
-                // 触发hook
-                me.options.onScale();
-                me.updateImgChange('scale', .9);
             };
             this.base.addEventHandler(this.base.getEleById('_tool-redo'), 'click', redoFn);
             this.base.addEventHandler(this.base.getEleById('_tool-rotate'), 'click', rotateFn);
@@ -828,14 +827,26 @@ window.onload = function (){
                     case 'right':
                         me.updateImgChange('position', null, 'LR', step);
                         break;
+                    case 'big':
+                        me.updateImgChange('scale', 1.25);
+                        // 触发hook
+                        me.options.onScale('big');
+                        break;
+                    case 'small':
+                        me.updateImgChange('scale', .9);
+                        // 触发hook
+                        me.options.onScale('small');
+                        break;
                     default:
                         break;
                 }
             };
             this.base.addEventHandler(this.base.getEleById('_editor-top-arrow'), 'click', () => {arrowChangeOp('top');});
-            this.base.addEventHandler(this.base.getEleById('_editor-bottom-arrow'), 'click', () => {arrowChangeOp('bottom');})
-            this.base.addEventHandler(this.base.getEleById('_editor-left-arrow'), 'click', () => {arrowChangeOp('left');})
-            this.base.addEventHandler(this.base.getEleById('_editor-right-arrow'), 'click', () => {arrowChangeOp('right');})
+            this.base.addEventHandler(this.base.getEleById('_editor-bottom-arrow'), 'click', () => {arrowChangeOp('bottom');});
+            this.base.addEventHandler(this.base.getEleById('_editor-left-arrow'), 'click', () => {arrowChangeOp('left');});
+            this.base.addEventHandler(this.base.getEleById('_editor-right-arrow'), 'click', () => {arrowChangeOp('right');});
+            this.base.addEventHandler(this.base.getEleById('_editor-big-icon'), 'click', () => {arrowChangeOp('big');});
+            this.base.addEventHandler(this.base.getEleById('_editor-small-icon'), 'click', () => {arrowChangeOp('small');});
         };
         // 绑定事件函数库（保证兼容性）
         bindEventStore(bindEle, eventType, customizeFn) {
@@ -1224,7 +1235,7 @@ window.onload = function (){
         // 编辑器主体宽高比例（视口宽<460px生效，默认2/3）
         editorWH: 2/3,
         // 是否禁用手指拖动功能
-        disableTouch: true,
+        disableTouch: false,
         // 禁用手指拖动功能时自定义步长 单位px
         disableTouchStepLen: 40,
         // 传入的图片
