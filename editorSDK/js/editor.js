@@ -411,6 +411,10 @@ window.onload = function (){
                 toolContainerId: options.toolid,
                 // 传入的图片
                 uploadImg: options.uploadImg || '',
+                // 是否禁用手指拖动功能
+                disableTouch: options.disableTouch || false,
+                // 禁用手指拖动功能时自定义步长 单位px
+                disableTouchStepLen: options.disableTouchStepLen || 30,
                 // 图片的放大最大(小)比例
                 imgMaxScale: options.imgMaxScale || 3,
                 imgMinScale: options.imgMinScale || 0.5,
@@ -418,11 +422,14 @@ window.onload = function (){
                 onInit: options.onInit || function () {  },
                 onScale: options.onScale || function () {  },
                 onRedo: options.onRedo || function () {  },
+                onClickHook: options.onClickHook || function () {  },
+                onMoveHook: options.onMoveHook || function () {  },
+                onEndHook: options.onEndHook || function () {  },
             };
             // 内部数据
             this.store = {
                 // 编辑框尺寸--高=宽
-                width:0,
+                width: 0,
                 minwidth: 100,
                 maxwidth: 100,
                 height:0,
@@ -433,7 +440,7 @@ window.onload = function (){
                 // 编辑器主体的比例
                 editorProportion: options.editorProportion || 0.9,
                 // 编辑器主体宽高比例
-                editorWH: options.editorWH || 2/3,
+                editorWH: options.editorWH || 2 / 3,
                 // 编辑器工具主体的比例
                 editorToolProportion: options.editorToolProportion || options.editorProportion || 0.9,
                 // --------------
@@ -444,6 +451,9 @@ window.onload = function (){
                 imgLeft: 0,
                 // 图片缩放
                 imgScale: 1,
+                // 图片的宽高
+                imgWidth: 0,
+                imgHeight: 0,
                 // 图片旋转角度
                 rotateAngle: 0,
                 imgmouseStartP: [],
@@ -468,6 +478,14 @@ window.onload = function (){
             this.base = new Base();
             // 渲染页面
             this.render();
+            let me = this;
+            window.onresize = function () {
+                // 渲染页面
+                while (document.body.firstChild) {
+                    document.body.removeChild(document.body.firstChild);
+                };
+                me.render();
+            };
         };
         render() {
             // 触发hook
@@ -479,13 +497,23 @@ window.onload = function (){
             var editorBodyTpl = '<div class="editor-body" id="' + $id_prefix+ '_editor-body">' +
                                     '<img class="editor-img" src="' + this.options.uploadImg + '" alt="" id="' + $id_prefix+ '_editor-img">' +
                                     '<div class="editor-content">' +
-                                        '<div class="editor-top" id="' + $id_prefix+ '_editor-top"></div>' +
-                                        '<div class="editor-middle-box" id="' + $id_prefix+ '_editor-middle-box">' +
-                                            '<div class="editor-right" id="' + $id_prefix+ '_editor-right"></div>' +
-                                            '<div class="editor-box" id="editor-box"></div>' +
+                                        '<div class="editor-top" id="' + $id_prefix+ '_editor-top">' +
+                                            '<div class="editor-1-arrowBox" id="' + $id_prefix + '_editor-1-arrowBox">' +
+                                                '<div class="editor-top-arrow arrow" id="' + $id_prefix + '_editor-top-arrow"></div>' +
+                                                '<div class="editor-bottom-arrow arrow" id="' + $id_prefix + '_editor-bottom-arrow"></div>' +
+                                            '</div>' +
+                                        '</div>' +
+                                        '<div class="editor-middle-box" id="' + $id_prefix + '_editor-middle-box">' +
+                                            '<div class="editor-right" id="' + $id_prefix + '_editor-right"></div>' +
+                                            '<div class="editor-box" id="' + $id_prefix + '_editor-box"></div>' +
                                             '<div class="editor-left" id="' + $id_prefix+ '_editor-left"></div>' +
                                         '</div>' +
-                                        '<div class="editor-bottom" id="' + $id_prefix+ '_editor-bottom"></div>' +
+                                        '<div class="editor-bottom" id="' + $id_prefix+ '_editor-bottom">' + 
+                                            '<div class="editor-2-arrowBox" id="' + $id_prefix + '_editor-2-arrowBox">' + 
+                                                '<div class="editor-left-arrow arrow" id="' + $id_prefix + '_editor-left-arrow"></div>' +
+                                                '<div class="editor-right-arrow arrow" id="' + $id_prefix + '_editor-right-arrow"></div>' +
+                                            '</div>' +
+                                        '</div>' +
                                     '</div>' +
                                     '<canvas class="canvas"></canvas>' +
                                 '</div>';
@@ -563,6 +591,11 @@ window.onload = function (){
                 };
                 this.base.toggleShow(this.base.getEleById('_toolbar-item-before'));
             };
+            // 是否禁用touch
+            if (!this.options.disableTouch) {
+                this.base.getEleById('_editor-2-arrowBox').style.display = 'none';
+                this.base.getEleById('_editor-1-arrowBox').style.display = 'none';
+            }
             this.setEvent();
             // 初始化
             this.init();
@@ -593,30 +626,39 @@ window.onload = function (){
                  }
                 this.base.addEventHandler(beforeItem, 'mouseover', visibleTollBar);
                 this.base.addEventHandler(toolbar, 'mouseleave', visibleTollBar);
+                // this.bindEventStore(beforeItem, 'click', visibleTollBar);
             };
+
+
             // 1.编辑框行为
-            var editorBox = document.getElementById('editor-box');
-            var editorBoxEnterFn = function () { 
+            var editorBox = me.base.getEleById('_editor-box');
+            var editorBoxEnterFn = function () {
+                if (me.store.fingerEenter) return;
                 me.store.fingerEenter = true;
-                // console.log('fingerEenter:', me.store.fingerEenter);
+                console.log('fingerEenter:', me.store.fingerEenter);
             };
             var editorBoxLeaveFn = function () { 
                 me.store.fingerEenter = false;
                 // 关闭图片操作行为
                 me.store.imgMoveFinish = true;
                 me.store.imgMoveStart = false;
-                // console.log('fingerEenter:', me.store.fingerEenter);
+                console.log('fingerEenter:', me.store.fingerEenter);
             };
             this.base.addEventHandler(editorBox, 'mouseenter', editorBoxEnterFn);
             this.base.addEventHandler(editorBox, 'mouseleave', editorBoxLeaveFn);
+            this.base.addEventHandler(editorBox, 'touchstart', editorBoxEnterFn);
+            this.base.addEventHandler(editorBox, 'touchend', editorBoxLeaveFn);
+
             // 2.图片行为editor-img
             var imgElem = this.base.getEleById('_editor-img');
             //  移动图片
             var ImgElemDownFn = function (e) {
                 // 当前鼠标位置
-                if (!me.store.fingerEenter ) return;
+                if (!me.store.fingerEenter) return;
                 me.store.imgMoveFinish = false;
                 me.store.imgMoveStart = true;
+                e = e || window.event;
+                me.base.preventDefault(e);
                 var etype = e.changedTouches || e;
                 // 双指放大
                 if (e.changedTouches && e.changedTouches.length > 1) {// 移动端  两指
@@ -636,8 +678,8 @@ window.onload = function (){
                         x: parseInt(etype[0].clientX, 10),
                         y: parseInt(etype[0].clientY, 10)
                     };
-                    console.log('移动端  单指start:', etype);
-                    me.store.imgmouseStartP.push(finger1);
+                    me.store.imgmouseStartP[0] = finger1;
+                    console.log('移动端  单指start:', me.store.imgmouseStartP[0]);
                 }
                 else {// pc
                     var finger1 = {
@@ -645,7 +687,7 @@ window.onload = function (){
                         y: parseInt(etype.clientY, 10)
                     };
                     console.log('pc 单指start:', finger1);
-                    me.store.imgmouseStartP.push(finger1);
+                    me.store.imgmouseStartP[0] = finger1;
                 };
                 // console.log('当前鼠标位置', e.changedTouches, me.store.imgmouseStartP)
             };
@@ -654,6 +696,8 @@ window.onload = function (){
                 if (!me.store.fingerEenter ) return;
                 if (me.store.imgMoveFinish ) return;
                 if (!me.store.imgMoveStart ) return;
+                e = e || window.event;
+                me.base.preventDefault(e);
                 var etype = e.changedTouches || e;
                 if (e.changedTouches && e.changedTouches.length > 1) {// 移动端  两指
                     var finger1 = {
@@ -672,8 +716,8 @@ window.onload = function (){
                         x: parseInt(etype[0].clientX, 10),
                         y: parseInt(etype[0].clientY, 10)
                     };
-                    console.log('移动端  单指move:', etype);
-                    me.store.imgmouseMoveP.push(finger1);
+                    console.log('移动端  单指move:', finger1);
+                    me.store.imgmouseMoveP[0] = (finger1);
                 }
                 else {// pc 单指
                     var finger1 = {
@@ -681,7 +725,7 @@ window.onload = function (){
                         y: parseInt(etype.clientY, 10)
                     };
                     console.log('pc 单指move:', finger1);
-                    me.store.imgmouseMoveP.push(finger1);
+                    me.store.imgmouseMoveP[0] = finger1;
                 };
                 // me.store.imgmouseMoveP = {x: parseInt(etype.clientX, 10), y: parseInt(etype.clientY, 10)};
                 // 判断是移动或则缩放
@@ -710,30 +754,35 @@ window.onload = function (){
                         x: imgmouseMoveP['x'] - imgmouseStartP['x'],
                         y: imgmouseMoveP['y'] - imgmouseStartP['y']
                     };
-                    console.log('pc/移动端 单指移动：', me.store.imgTransForXY);
+                    console.log('pc/移动端 单指移动：', imgmouseStartP, imgmouseMoveP, me.store.imgTransForXY);
                     // 让图片移动
-                    // me.base.throttle(me.updateImgChange('position'), 50);
+                    if (Math.abs(me.store.imgTransForXY.x) < 10) {
+                        me.store.imgTransForXY.x < 0 ? me.store.imgTransForXY.x = - 10 : me.store.imgTransForXY.x =  10;
+                    };
+                    if (Math.abs(me.store.imgTransForXY.y) < 10) {
+                        me.store.imgTransForXY.y < 0 ? me.store.imgTransForXY.y = - 10 : me.store.imgTransForXY.y =  10;
+                    };
                     me.updateImgChange('position');
                 };
-                // console.log('当前鼠标位置1', me.store.imgmouseMoveP)
             };
-            var ImgElemUpFn = function (e) { 
+            var ImgElemUpFn = function (e) {console.log('ImgElemUpFn;', e)
                 // 当前鼠标位置
                 if (!me.store.fingerEenter ) return;
                 me.store.imgMoveFinish = true;
                 me.store.imgMoveStart = false;
                 me.store.imgmouseStartP = [];
                 me.store.imgmouseMoveP = [];
-                // console.log('当前鼠标位置2', me.store.imgTransForXY);
                 // 检测图片边缘
                 // me.detectionImgPos();
             };
-            this.base.addEventHandler(editorBox, 'mousedown', ImgElemDownFn);
-            this.base.addEventHandler(editorBox, 'mousemove', this.base.throttle(ImgElemMoveFn, 50));
-            this.base.addEventHandler(editorBox, 'mouseup', ImgElemUpFn);
-            this.base.addEventHandler(editorBox, 'touchstart', ImgElemDownFn);
-            this.base.addEventHandler(editorBox, 'touchmove', this.base.throttle(ImgElemMoveFn, 50));
-            this.base.addEventHandler(editorBox, 'touchend', ImgElemUpFn);
+            if (!me.options.disableTouch) {
+                me.base.addEventHandler(editorBox, 'mousedown', ImgElemDownFn);
+                me.base.addEventHandler(editorBox, 'mousemove', me.base.throttle(ImgElemMoveFn, 300));
+                me.base.addEventHandler(editorBox, 'mouseup', ImgElemUpFn);
+                me.base.addEventHandler(editorBox, 'touchstart', ImgElemDownFn);
+                me.base.addEventHandler(editorBox, 'touchmove', me.base.throttle(ImgElemMoveFn, 300));
+                me.base.addEventHandler(editorBox, 'touchend', ImgElemUpFn);
+            };
             // 3.工具栏行为_tool-redo
             // 撤销
             var redoFn = function () {
@@ -756,11 +805,88 @@ window.onload = function (){
                 console.log('select');
                 // 触发hook
                 me.options.onScale();
-                me.updateImgChange('scale', 1.5);
+                me.updateImgChange('scale', .9);
             };
             this.base.addEventHandler(this.base.getEleById('_tool-redo'), 'click', redoFn);
             this.base.addEventHandler(this.base.getEleById('_tool-rotate'), 'click', rotateFn);
             this.base.addEventHandler(this.base.getEleById('_tool-select'), 'click', selectFn);
+
+
+            // 4. 上下左右移动箭头按钮事件 _editor-top-arrow、_editor-bottom-arrow、_editor-left-arrow、_editor-right-arrow
+            var arrowChangeOp = function (type) {
+                let step = Math.abs(options.disableTouchStepLen);
+                switch (type) {
+                    case 'top':
+                        me.updateImgChange('position', null, 'TB', - step);
+                        break;
+                    case 'bottom':
+                        me.updateImgChange('position', null, 'TB', step);
+                        break;
+                    case 'left':
+                        me.updateImgChange('position', null, 'LR', - step);
+                        break;
+                    case 'right':
+                        me.updateImgChange('position', null, 'LR', step);
+                        break;
+                    default:
+                        break;
+                }
+            };
+            this.base.addEventHandler(this.base.getEleById('_editor-top-arrow'), 'click', () => {arrowChangeOp('top');});
+            this.base.addEventHandler(this.base.getEleById('_editor-bottom-arrow'), 'click', () => {arrowChangeOp('bottom');})
+            this.base.addEventHandler(this.base.getEleById('_editor-left-arrow'), 'click', () => {arrowChangeOp('left');})
+            this.base.addEventHandler(this.base.getEleById('_editor-right-arrow'), 'click', () => {arrowChangeOp('right');})
+        };
+        // 绑定事件函数库（保证兼容性）
+        bindEventStore(bindEle, eventType, customizeFn) {
+            let me = this;
+            // 点击事件处理
+            var eventClickFn = function (e) {
+                customizeFn && customizeFn(e);
+                // 触发配置hook
+                me.options.onClickHook(e, bindEle);
+            };
+            // 移动事件处理
+            var eventMoveFn = function (e) {
+                customizeFn && customizeFn(e);
+                // 触发配置hook
+                me.options.onMoveHook(e, bindEle);
+            };
+            // 接触结束事件处理
+            var eventEndFn = function (e) {
+                customizeFn && customizeFn(e);
+                // 触发配置hook
+                me.options.onEndHook(e, bindEle);
+            };
+            // 覆盖事件处理
+            var eventEnterFn = function (e) {
+                customizeFn && customizeFn(e);
+                // 触发配置hook
+                me.options.onEnterHook(e, bindEle);
+            };
+            if (!bindEle || !eventType) return;
+            switch (eventType) {
+                case 'click':
+                    addEventHandler(bindEle, 'touchstart', eventClickFn);
+                    addEventHandler(bindEle, 'mousedown', eventClickFn);
+                    // 针对pc
+                    addEventHandler(bindEle, 'mouseenter', eventEndFn);
+                    break;
+                case 'move':
+                    addEventHandler(bindEle, 'touchmove', eventMoveFn);
+                    addEventHandler(bindEle, 'mousemove', eventMoveFn);
+                    break;
+                case 'end':
+                    addEventHandler(bindEle, 'touchend', eventEndFn);
+                    addEventHandler(bindEle, 'mouseup', eventEndFn);
+                    addEventHandler(bindEle, 'touchcancel', eventEndFn);
+                    break;
+                case 'enter':
+                    addEventHandler(bindEle, 'mouseenter', eventEnterFn);
+                    break;
+                default:
+                    break;
+            };
         };
         // 初始化
         init() {
@@ -822,70 +948,84 @@ window.onload = function (){
                 };
             };
             // 设置裁剪框的宽高和居中
-            document.getElementById('editor-box').style= `width:${this.store.width}px;height:${this.store.height}px;`;
+            this.base.getEleById('_editor-box').style= `width:${this.store.width}px;height:${this.store.height}px;`;
             if (+this.store.equipmentW <= 460) {
-                this.base.getEleById('_editor-middle-box').style = `width:${this.store.equipmentW * this.store.editorProportion}px;height:${this.store.height + 4}px`;
-                this.base.getEleById('_editor-right').style = `width:${(this.store.equipmentW * this.store.editorProportion - this.store.width - 4) / 2}px;`;
-                this.base.getEleById('_editor-left').style = `width:${(this.store.equipmentW * this.store.editorProportion - this.store.width - 4) / 2}px;`;
+                this.base.getEleById('_editor-middle-box').style = `width:${this.store.equipmentW * this.store.editorProportion}px;height:${this.store.height}px`;
+                this.base.getEleById('_editor-right').style = `width:${(this.store.equipmentW * this.store.editorProportion - this.store.width) / 2}px;`;
+                this.base.getEleById('_editor-left').style = `width:${(this.store.equipmentW * this.store.editorProportion - this.store.width) / 2}px;`;
                 this.base.getEleById('_editor-bottom').style = `width:${this.store.equipmentW * this.store.editorProportion}px;
-                                                                height:${((this.store.equipmentW * this.store.editorProportion) / this.store.editorWH - this.store.height - 4) / 2}px`;
+                                                                height:${((this.store.equipmentW * this.store.editorProportion) / this.store.editorWH - this.store.height) / 2}px`;
                 this.base.getEleById('_editor-top').style = `width:${this.store.equipmentW * this.store.editorProportion}px;
-                                                            height:${((this.store.equipmentW * this.store.editorProportion) / this.store.editorWH - this.store.height - 4) / 2}px`;
+                                                            height:${((this.store.equipmentW * this.store.editorProportion) / this.store.editorWH - this.store.height) / 2}px`;
                 // 更新数据
-                this.store.trimmingBoxleft = (this.store.equipmentW * this.store.editorProportion - this.store.width - 4) / 2;
-                this.store.trimmingBoxright = (this.store.equipmentW * this.store.editorProportion - this.store.width - 4) / 2;
-                this.store.trimmingBoxTop = ((this.store.equipmentW * this.store.editorProportion) / this.store.editorWH - this.store.height - 4) / 2;
-                this.store.trimmingBoxBottom = ((this.store.equipmentW * this.store.editorProportion) / this.store.editorWH - this.store.height - 4) / 2;
+                this.store.trimmingBoxleft = (this.store.equipmentW * this.store.editorProportion - this.store.width) / 2;
+                this.store.trimmingBoxright = (this.store.equipmentW * this.store.editorProportion - this.store.width) / 2;
+                this.store.trimmingBoxTop = ((this.store.equipmentW * this.store.editorProportion) / this.store.editorWH - this.store.height) / 2;
+                this.store.trimmingBoxBottom = ((this.store.equipmentW * this.store.editorProportion) / this.store.editorWH - this.store.height) / 2;
             }
             else {
-                this.base.getEleById('_editor-middle-box').style = `width:${this.options.editorW}px;height:${this.store.height + 4}px`;
-                this.base.getEleById('_editor-right').style = `width:${(this.options.editorW - this.store.width - 4) / 2}px;`;
-                this.base.getEleById('_editor-left').style = `width:${(this.options.editorW - this.store.width - 4) / 2}px;`;
+                this.base.getEleById('_editor-middle-box').style = `width:${this.options.editorW}px;height:${this.store.height}px`;
+                this.base.getEleById('_editor-right').style = `width:${(this.options.editorW - this.store.width) / 2}px;`;
+                this.base.getEleById('_editor-left').style = `width:${(this.options.editorW - this.store.width) / 2}px;`;
                 this.base.getEleById('_editor-bottom').style = `width:${this.options.editorW}px;
-                                                                height:${(this.options.editorH - this.store.height - 4) / 2}px`;
+                                                                height:${(this.options.editorH - this.store.height) / 2}px`;
                 this.base.getEleById('_editor-top').style = `width:${this.options.editorW}px;
-                                                            height:${(this.options.editorH - this.store.height - 4) / 2}px`;
+                                                            height:${(this.options.editorH - this.store.height) / 2}px`;
                  // 更新数据
-                 this.store.trimmingBoxleft = (this.options.editorW - this.store.width - 4) / 2;
-                 this.store.trimmingBoxright = (this.options.editorW - this.store.width - 4) / 2;
-                 this.store.trimmingBoxTop = (this.options.editorH - this.store.height - 4) / 2;
-                 this.store.trimmingBoxBottom = (this.options.editorH - this.store.height - 4) / 2;
+                 this.store.trimmingBoxleft = (this.options.editorW - this.store.width) / 2;
+                 this.store.trimmingBoxright = (this.options.editorW - this.store.width) / 2;
+                 this.store.trimmingBoxTop = (this.options.editorH - this.store.height) / 2;
+                 this.store.trimmingBoxBottom = (this.options.editorH - this.store.height) / 2;
             };
             // 图片居中
             this.setImgCenter();
         };
-        // 图片变化更新
-        updateImgChange(type, scaleNum) {
+        // 图片变化更新 方向
+        updateImgChange(type, scaleNum, directionType, directionNum) {
             var imgElem = this.base.getEleById('_editor-img');
             var me = this;
-            switch(type) {
+            me.updateStore();
+            switch (type) {
                 case 'position':
-                    // translate3d(${imgLeft}px, ${imgTop}px, 0)
-                    // var currentTransform = me.base.getEleById('_editor-img').style.transform;
-                    // 先保存当前scale和rotate
-                    // var scaleReg=  /(\s|^)scale\((\d*)(\.?)(\d*)\)(\s|$)/g;
-                    // var currentScaleEle = scaleReg.exec(currentTransform);
-                    // var currentScale = currentScaleEle ? currentScaleEle[0] : '';
-                    // var rotateReg = /(\s|^)rotate\((\d*)deg\)(\s|$)/g;
-                    // var currentRotateEle = rotateReg.exec(currentTransform);
-                    // var currentRotate = currentRotateEle ? currentRotateEle[0] : '';
-                    // console.log('hello00:', currentScale, currentRotate);
                     // 从新组合
-                    var currentTransform = '';
+                    var currentTransform = '',
+                        afterImgLeft,
+                        afterImgTop;
                     // 变化后的imgLeft、imgTop
-                    console.log('position=>', me.store.imgLeft, me.store.imgTop)
-                    var afterImgLeft = me.store.imgLeft + me.store.imgTransForXY.x;
-                    var afterImgTop = me.store.imgTop + me.store.imgTransForXY.y;
+                    if (me.options.disableTouch && directionType && directionNum) {
+                        switch (directionType) {
+                            case 'TB':
+                                afterImgTop = me.store.imgTop + directionNum;
+                                afterImgLeft = me.store.imgLeft;
+                                break;
+                            case 'LR':
+                                afterImgLeft = me.store.imgLeft + directionNum;
+                                afterImgTop = me.store.imgTop;
+                                break;
+                            default:
+                                break;
+                        };
+                    }
+                    else {
+                        if (me.store.imgMoveFinish || !me.store.imgMoveStart) return;
+                        afterImgLeft = me.store.imgLeft + me.store.imgTransForXY.x;
+                        afterImgTop = me.store.imgTop + me.store.imgTransForXY.y;
+                    };
+                    console.log('position=>', me.store.imgLeft, afterImgLeft, me.store.imgTop, afterImgTop);
+                    currentTransform = `translate3d(${afterImgLeft}px, ${afterImgTop}px, 0) scale(${me.store.imgScale}) rotate(${me.store.rotateAngle}deg)`;
+                    imgElem.style.transform = currentTransform;
                     // 更新数据
                     me.store.imgLeft = afterImgLeft;
                     me.store.imgTop = afterImgTop;
                     // me.detectionImgPos();
-                    currentTransform = `transform:translate3d(${afterImgLeft}px, ${afterImgTop}px, 0) scale(${me.store.imgScale}) rotate(${me.store.rotateAngle}deg)`;
-                    imgElem.style.transform = currentTransform;
                     break;
                 case 'scale':
                     var resSacle = (scaleNum === 0) ? 1 : me.store.imgScale * scaleNum;
                     // 更新数据
+                    // 实际允许缩小的比例
+                    let minHW = Math.min(me.store.imgHeight, me.store.imgWidth);
+                    let minScaleNum  = Math.max(me.store.width, me.store.height) / minHW;
+                    (+minScaleNum > +me.options.imgMinScale) && (me.options.imgMinScale = minScaleNum);
                     if (+resSacle > me.options.imgMaxScale) {
                         me.store.imgScale = me.options.imgMaxScale;
                     }
@@ -953,8 +1093,11 @@ window.onload = function (){
                 // 更新数据
                 me.store.imgLeft = imgLeft;
                 me.store.imgTop= imgTop;
-                me.base.getEleById('_editor-img').style = `transform:translate3d(${imgLeft}px, ${imgTop}px, 0) scale(${me.store.imgScale})`;
+                me.base.getEleById('_editor-img').style = `transform:translate3d(${imgLeft}px, ${imgTop}px, 0) scale(${me.store.imgScale});transition: none;`;
                 me.store.rotateAngle = 0;
+                setTimeout(_ => {
+                    me.base.getEleById('_editor-img').style = `transform:translate3d(${imgLeft}px, ${imgTop}px, 0) scale(${me.store.imgScale});transition: all .1s linear`;
+                }, 300);
             }
             else if (type && type === 'rotate') {
                 // 更新数据
@@ -968,20 +1111,92 @@ window.onload = function (){
                 me.base.getEleById('_editor-img').style.transform = currentTransform;
             };
         };
-        // 检图片边缘
+        // 检图片边缘---位置
         detectionImgPos(type) {
             var me = this;
             if (this.store.limitMove) {
                 return;
             };
             // 左边界
-            me.store.imgLeft = Math.abs(me.store.imgLeft) > Math.abs(me.store.trimmingBoxleft)
-            ? me.store.trimmingBoxleft : me.store.imgLeft;
-            // 上边界
-            me.store.imgTop = Math.abs(me.store.imgTop) > Math.abs(me.store.trimmingBoxTop)
-                        ? me.store.trimmingBoxTop : me.store.imgTop;
+            // me.store.imgLeft = Math.abs(me.store.imgLeft) > Math.abs(me.store.trimmingBoxleft)
+            // ? me.store.trimmingBoxleft : me.store.imgLeft;
+            // if (Math.abs(me.store.imgLeft) > Math.abs(me.store.trimmingBoxleft)) {
+            //     me.store.imgLeft = me.store.trimmingBoxleft > 0 ? me.store.trimmingBoxleft : - me.store.trimmingBoxleft;
+            // }
+            // // 上边界
+            // me.store.imgTop = Math.abs(me.store.imgTop) > Math.abs(me.store.trimmingBoxTop)
+            //             ? me.store.trimmingBoxTop : me.store.imgTop;
+            // me.base.getEleById('_editor-img').style = `transform:translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale})`;
+
+            // 更新相关的数据
+            me.updateStore();
+            let left = me.store.trimmingBoxleft + me.store.imgWidth * me.store.imgScale / 2 >= me.store.imgLeft
+                    ? me.store.imgLeft : me.store.trimmingBoxleft + me.store.imgLeft * me.store.imgScale  / 2;
+            // left = me.store.trimmingBoxleft
+            //       + me.store.width - me.store.imgWidth * me.store.imgScale / 2 <= me.store.imgLeft
+            //       ? me.store.imgLeft : me.store.trimmingBoxleft + me.store.width - me.store.imgWidth * me.store.imgScale / 2;
+
+            let top = me.store.trimmingBoxTop + me.store.imgHeight * me.store.imgScale  / 2 >= me.store.trimmingBoxTop
+                    ? me.store.trimmingBoxTop :  me.store.trimmingBoxTop +  + me.store.imgHeight * me.store.imgScale  / 2;
+            // top = me.store.trimmingBoxTop + me.store.height - me.store.imgHeight * me.store.imgScale / 2 <= me.store.trimmingBoxTop
+            //     ? me.store.trimmingBoxTop : me.store.trimmingBoxTop + me.store.height - me.store.imgHeight * me.store.imgScale / 2;
+            // 更新数据
+            console.log('边缘检测：', top, left, me.store.trimmingBoxleft,me.store.imgWidth ,me.store.imgScale)
+            me.store.imgLeft = left;
+            me.store.imgTop = top;
             me.base.getEleById('_editor-img').style = `transform:translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale})`;
         };
+        // 检图片边缘---缩放
+        detectionImgScale() {
+            var scale = this.store.imgScale;
+            this.updateStore();
+            var imgWidth = this.store.imgWidth;
+            var imgHeight = this.store.imgHeight;
+            // 根据图片width进行判断
+            if (imgWidth && imgWidth * scale < this.store.trimmingBoxWidth) {
+                scale = this.store.trimmingBoxWidth / imgWidth;
+            };
+            if (imgHeight && imgHeight * scale < this.store.trimmingBoxHeight) {
+                scale = Math.max(scale, this.store.trimmingBoxHeight / imgHeight);
+            };
+            var currentTransform = me.base.getEleById('_editor-img').style.transform;
+            var reg = /(\s|^)scale\((\d*\.?\d*)\)(\s|$)/g;
+            if (reg.test(currentTransform)) {
+                currentTransform = currentTransform.replace(reg, '');
+            };
+            currentTransform += ` scale(${me.store.imgScale})`;
+            me.base.getEleById('_editor-img').style.transform = currentTransform;
+        };
+        // 更新store中的数据
+        updateStore() {
+            var me = this;
+            // 更新图片的宽高
+            this.store.imgWidth = parseInt(me.base.getEleById('_editor-img').width);
+            this.store.imgHeight = parseInt(me.base.getEleById('_editor-img').height);
+            // 更新剪裁框的宽高
+            this.store.width = parseInt(me.base.getEleById('_editor-box').style.width);
+            this.store.height = parseInt(me.base.getEleById('_editor-box').style.height);
+            // 更新最新的裁剪框上下左右位置
+            this.store.trimmingBoxleft = parseInt(me.base.getEleById('_editor-left').style.width);
+            this.store.trimmingBoxright = parseInt(me.base.getEleById('_editor-right').style.width);
+            this.store.trimmingBoxTop = parseInt(me.base.getEleById('_editor-top').style.height);
+            this.store.trimmingBoxBottom = parseInt(me.base.getEleById('_editor-bottom').style.height);
+        };
+        // 获取并更新特定的对应属性值
+        getCorrespondVal(type) {
+            if (!type) return null;
+            switch (type) {
+                case 'imgTransLT':
+                    var currentImgTransform = me.base.getEleById('_editor-img').style.transform;
+                    
+                    break;
+                case 'test':
+                    break;
+                default:
+                    console.log('getCorrespondVal err');
+                    break;
+            }
+        }
         // 裁剪框
         updateEditorBoxChange() {
 
@@ -1008,6 +1223,10 @@ window.onload = function (){
         // editorToolProportion: 0.6,
         // 编辑器主体宽高比例（视口宽<460px生效，默认2/3）
         editorWH: 2/3,
+        // 是否禁用手指拖动功能
+        disableTouch: true,
+        // 禁用手指拖动功能时自定义步长 单位px
+        disableTouchStepLen: 40,
         // 传入的图片
         uploadImg: 'https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fc-ssl.duitang.com%2Fuploads%2Fblog%2F202012%2F04%2F20201204182229_e1a0a.thumb.1000_0.jpeg&refer=http%3A%2F%2Fc-ssl.duitang.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1638869603&t=0ac37cac7c77e0e7253f4f0c8d6d8851',
         // uploadImg: 'https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fb-ssl.duitang.com%2Fuploads%2Fitem%2F201608%2F12%2F20160812204518_SyX8M.thumb.700_0.jpeg&refer=http%3A%2F%2Fb-ssl.duitang.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1638869925&t=47cfa3559bb538068255d6bee03a379a',
@@ -1026,6 +1245,123 @@ window.onload = function (){
         onRedo: function () { 
             console.log('onRedo...')
         },
+        // 发生节点事件d对应事件触发时触发,可以获取当前事件节点和事件对象
+        onClickHook: function () {
+            console.log('onClickHook...')
+        },
+        onMoveHook: function () {
+            console.log('onMoveHook...')
+        },
+        onEndHook: function () {
+            console.log('onEndHook...')
+        }
     };
     let editorInstance = new ImgEditor(options);
 };
+
+
+
+
+
+
+
+
+// // 点击事件处理
+// var eventClickFn = function (e) {
+//     if (that.finish || isAniDuring) {
+//         return false;
+//     }
+//     that.start = true;
+//     // ie 兼容
+//     e = e || win.event;
+//     preventDefault(e);
+
+//     // var etype = that.devicetype === 'wap' ? (e.touches[0] || e.changedTouches[0]) : e;
+//     var etype = e.touches && e.touches[0] || e.changedTouches && e.changedTouches[0] || e;
+
+//     addClass(slideButton, 'vcode-slide-button-focus');
+//     // 自定义颜色需求 add
+//     if (that.conf.slideConfig && that.conf.slideConfig.color) {
+//         slideCover.style.background = that.conf.slideConfig.color || '#4b96ea';
+//         // slideButton.style.background = that.conf.slideConfig.color || '#4b96ea';
+//         // slideButton.style.border = that.conf.slideConfig.color || '#4b96ea';
+//     }
+
+//     that.currentX = etype.clientX;
+// };
+// // 移动事件处理
+// var eventMoveFn = function (e) {
+//     // me.start 兼容pc端 否则mousemove事件 一经过按钮就会触发滑动
+//     if (that.finish || !that.start) {
+//         return false;
+//     }
+//     // 根据开关控制滑块条中间的提示文字显示隐藏
+//     that.store.ExteriorSwitch && addClass(slideTips, 'hide');
+
+//     e = e || win.event;
+//     preventDefault(e);
+//     // var etype = that.devicetype === 'wap' ? e.changedTouches[0] : e;
+//     var etype = e.changedTouches && e.changedTouches[0] || e;
+//     var changeX = (etype.clientX - that.currentX);
+//     var maxChangeX = $('.vcode-slide-bottom').width() - $('.vcode-slide-button').width();
+//     // 设置两个极端情况
+//     if (changeX >= maxChangeX - 5) {
+//         changeX = maxChangeX;
+//         that.finish = true;
+//         // successUiCallback();
+//         slideFinish();
+//     }
+//     else if (changeX <= 0) {
+//         changeX = 0;
+//     }
+//     var percentage = parseFloat(changeX / maxChangeX).toFixed(2);
+//     // 蓝色进度条 更改宽度
+//     slideCover.style.width = (changeX + slideButtonWidth) + 'px';
+
+//     if (ieVersion && +ieVersion <= 9) {
+//         slideButton.style['margin-left'] = changeX + 'px';
+//         slideExpression.style['margin-left'] = (-563 * percentage) + 'px';
+//         bottomP.style['margin-left'] = (-75 + changeX * 0.1) + 'px';
+//     }
+//     else {
+//         slideButton.style.transform = 'translateX(' + changeX + 'px)';
+//         slideButton.style.msTransform = 'translateX(' + changeX + 'px)';
+//         slideButton.style.webkitTransform = 'translateX(' + changeX + 'px)';
+//         slideButton.style.MozTransform = 'translateX(' + changeX + 'px)';
+//         slideButton.style.OTransform = 'translateX(' + changeX + 'px)';
+//         // slideButton.setAttribute('style', 'transform:translateX(' + changeX + 'px)');
+//         slideExpression.style.transform = 'translateX(-' + (percentage * 89.5) + '%)';
+//         slideExpression.style.msTransform = 'translateX(-' + (percentage * 89.5) + '%)';
+//         slideExpression.style.webkitTransform = 'translateX(-' + (percentage * 89.5) + '%)';
+//         slideExpression.style.MozTransform = 'translateX(-' + (percentage * 89.5) + '%)';
+//         slideExpression.style.OTransform = 'translateX(-' + (percentage * 89.5) + '%)';
+//         // slideExpression.setAttribute('style', 'transform:translateX(-' + (percentage * 89.5) + '%)');
+//         bottomP.style.transform = 'translateX(' + (percentage * 10) + '%)';
+//     }
+// };
+// // 接触结束事件处理
+// var eventEndFn = function (e) {
+//     if (!that.start) {
+//         return false;
+//     }
+//     that.start = false;
+//     e = e || win.event;
+//     preventDefault(e);
+//     // var etype = that.devicetype === 'wap' ? e.changedTouches[0] : e;
+//     var etype = e.changedTouches && e.changedTouches[0] || e;
+
+//     var changeX = etype.clientX - this.currentX;
+//     if (changeX <= 0) {
+//         removeClass(slideButton, 'vcode-slide-button-focus');
+//         // 自定义颜色需求 remove
+//         if (that.conf.slideConfig && that.conf.slideConfig.color) {
+//             slideButton.style = '';
+//         }
+
+//         removeClass(slideButton, 'vcode-slide-button-error');
+//     }
+//     else if (!that.finish) {
+//         rollbackUi();
+//     }
+//     return false;
+// };

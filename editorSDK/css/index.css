@@ -34,15 +34,71 @@
 }
 
 .editor-top {
+    position: relative;
     width: 100%;
     height: calc(300px - 102px);
     background-color: rgba(0, 0, 0, .7);
 }
 
+.editor-1-arrowBox {
+    width: 70%;
+    height: 40%;
+    position: absolute;
+    bottom: 20%;
+    left: 50%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    transform: translateX(-50%);
+}
+
 .editor-bottom {
+    position: relative;
     width: 100%;
     height: calc(300px - 102px);
     background-color: rgba(0, 0, 0, .7);
+}
+
+.editor-2-arrowBox {
+    width: 70%;
+    height: 40%;
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.editor-top-arrow, .editor-bottom-arrow, .editor-left-arrow, .editor-right-arrow  {
+    height: 40px;
+    width: 40px;
+    background-color: blueviolet;
+}
+
+.editor-top-arrow {
+    background: url(../img/topArrow.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.editor-bottom-arrow {
+    background: url(../img/bottomArrow.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.editor-left-arrow {
+    background: url(../img/leftArrow.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.editor-right-arrow {
+    background: url(../img/rightArrow.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.arrow:active {
+    opacity: .7;
 }
 
 .editor-middle-box {
@@ -51,6 +107,7 @@
     display: flex;
     flex-wrap: nowrap;
     justify-content: space-between;
+    box-sizing: border-box;
 }
 
 .editor-right {
@@ -71,6 +128,7 @@
     width: 200px;
     height: 200px;
     border: 2px solid white;
+    box-sizing: border-box;
 }
 
 .editor-toolBar {
