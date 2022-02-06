@@ -161,7 +161,7 @@
     cursor: pointer;
     transition: all .5s linear;
     position: fixed;
-    bottom: 20px;
+    bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 999;
@@ -226,11 +226,31 @@
     background-color: gold;
 }
 
+.chexiao-icon {
+    background: url(../img/chexiao.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.reselect-icon {
+    background: url(../img/shangchuan.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.xuanzhuan-icon {
+    background: url(../img/xuanzhuan.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.ok-icon {
+    background: url(../img/ok.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
 .toolBar-item-text {
     height: 40%;
     width: 100%;
     text-align: center;
-    /* background-color: white; */
+    color: rgb(145, 130, 0);
     font-size: 12px;
     line-height: 1.2rem;
 }

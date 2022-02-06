@@ -530,25 +530,25 @@ window.onload = function (){
                                     '</div>' +
                                     '<div class="toolbar-item" id="' + $id_prefix + '_tool-select">' +
                                         '<p class="toolBar-item-icon-box">' +
-                                            '<span class="toolBar-item-icon"></span>' +
+                                            '<span class="toolBar-item-icon reselect-icon"></span>' +
                                         '</p>' +
                                         '<span class="toolBar-item-text">重选</span>' +
                                     '</div>' +
                                     '<div class="toolbar-item" id="' + $id_prefix + '_tool-redo">' +
-                                        '<p class="toolBar-item-icon-box">' +
-                                            '<span class="toolBar-item-icon"></span>'+
+                                        '<p class="toolBar-item-icon-box ">' +
+                                            '<span class="toolBar-item-icon chexiao-icon"></span>'+
                                         '</p>' +
                                         '<span class="toolBar-item-text">撤销</span>' +
                                     '</div>' +
                                     '<div class="toolbar-item" id="' + $id_prefix + '_tool-rotate">' +
                                         '<p class="toolBar-item-icon-box">' +
-                                            '<span class="toolBar-item-icon"></span>' +
+                                            '<span class="toolBar-item-icon xuanzhuan-icon"></span>' +
                                         '</p>' +
                                         '<span class="toolBar-item-text">旋转</span>' +
                                     '</div>' +
                                     '<div class="toolbar-item" id="' + $id_prefix + '_tool-ok">' +
                                         '<p class="toolBar-item-icon-box">' +
-                                            '<span class="toolBar-item-icon"></span>' +
+                                            '<span class="toolBar-item-icon ok-icon"></span>' +
                                         '</p>' +
                                         '<span class="toolBar-item-text">选好了</span>' +
                                     '</div>' +
@@ -1298,7 +1298,7 @@ window.onload = function (){
 
     let options = {
         // 弹窗模式或则嵌入模式
-        module: 'dialog1',
+        module: 'dialog',
         // 主体编辑器容器id
         id: 'editorBox',
         // 编辑器工具容器id
