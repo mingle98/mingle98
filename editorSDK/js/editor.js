@@ -575,7 +575,7 @@ window.onload = function (){
                 this.base.insertHTML('afterBegin', tempEditorTpl, this.base.getEleById('_editor-dialog-mask'));
                 this.base.addClass(this.base.getEleById('_editor-body'), 'dialog-body');
                 // 渲染编辑器工具bar主体到页面
-                this.base.insertHTML('afterBegin', tempEditorToolTpl, this.base.getEleById('_editor-body'));
+                this.base.insertHTML('afterBegin', tempEditorToolTpl, this.base.getEleById('_editor-dialog-mask'));
                 this.base.addClass(this.base.getEleById('_editor-toolBar'), 'editor-toolBar-fold');
             }
             else {
@@ -807,16 +807,38 @@ window.onload = function (){
                 // 图片归位
                 me.setImgCenter('rotate');
             };
-            // 选择
+            // 重选
             var selectFn = function () {
-                console.log('select');
+                let newUrl = prompt('输入新图片URL');
+                if (!/(\w+):\/\/([^/:]+)(:\d*)?([^# ]*)/.test(newUrl)) {
+                    return alert('url格式错误，请重新输入');
+                };
+                let img = new Image();
+                img.src = newUrl;
+                img.onerror = function () { 
+                    return alert('url无效，请重新输入');
+                };
+                img.onload = function () { 
+                    me.options.uploadImg = newUrl;
+                    // 渲染页面
+                    while (document.body.firstChild) {
+                        document.body.removeChild(document.body.firstChild);
+                    };
+                    me.render();
+                };
+                img = null;
+                console.log('select', newUrl);
+            };
+            // 选好了 _tool-ok
+            var confirmFn = function () {
+                console.log('confirmFn');
                 // canvas绘制
                 me.draw();
             };
             this.base.addEventHandler(this.base.getEleById('_tool-redo'), 'click', redoFn);
             this.base.addEventHandler(this.base.getEleById('_tool-rotate'), 'click', rotateFn);
             this.base.addEventHandler(this.base.getEleById('_tool-select'), 'click', selectFn);
-
+            this.base.addEventHandler(this.base.getEleById('_tool-ok'), 'click', confirmFn);
 
             // 4. 上下左右移动箭头按钮事件 _editor-top-arrow、_editor-bottom-arrow、_editor-left-arrow、_editor-right-arrow
             var arrowChangeOp = function (type) {
@@ -1124,12 +1146,14 @@ window.onload = function (){
             if (!type) {
                 setCenterFn(function () { 
                     me.base.getEleById('_editor-img').style.transform = `translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale})`;
+                    me.detectionImgScale();
                 });
             }
             else if (type && type === 'center') {
                 setCenterFn(function () { 
                     me.base.getEleById('_editor-img').style.transform = `translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale})`;
                     me.base.getEleById('_editor-img').style.transition = `none`;
+                    me.detectionImgScale();
                 });
                 me.store.rotateAngle = 0;
                 setTimeout(_ => {
@@ -1186,17 +1210,19 @@ window.onload = function (){
         };
         // 检图片边缘---缩放
         detectionImgScale() {
+            let me = this;
             var scale = this.store.imgScale;
             this.updateStore();
             var imgWidth = this.store.imgWidth;
             var imgHeight = this.store.imgHeight;
             // 根据图片width进行判断
-            if (imgWidth && imgWidth * scale < this.store.trimmingBoxWidth) {
-                scale = this.store.trimmingBoxWidth / imgWidth;
+            if (imgWidth && imgWidth * scale < this.store.width) {
+                scale = this.store.width / imgWidth;
             };
-            if (imgHeight && imgHeight * scale < this.store.trimmingBoxHeight) {
-                scale = Math.max(scale, this.store.trimmingBoxHeight / imgHeight);
+            if (imgHeight && imgHeight * scale < this.store.height) {
+                scale = Math.max(scale, this.store.height / imgHeight);
             };
+            me.store.imgScale = scale;
             var currentTransform = me.base.getEleById('_editor-img').style.transform;
             var reg = /(\s|^)scale\((\d*\.?\d*)\)(\s|$)/g;
             if (reg.test(currentTransform)) {
@@ -1284,7 +1310,7 @@ window.onload = function (){
         // 编辑器工具主体的width（视口宽<460px生效，默认0.9）
         // editorToolProportion: 0.6,
         // 编辑器主体宽高比例（视口宽<460px生效，默认2/3）
-        editorWH: 2/3,
+        editorWH: 2 / 3,
         // 是否禁用手指拖动功能
         disableTouch: true,
         // 禁用手指拖动功能时自定义步长 单位px
@@ -1320,110 +1346,3 @@ window.onload = function (){
     };
     let editorInstance = new ImgEditor(options);
 };
-
-
-
-
-
-
-
-
-// // 点击事件处理
-// var eventClickFn = function (e) {
-//     if (that.finish || isAniDuring) {
-//         return false;
-//     }
-//     that.start = true;
-//     // ie 兼容
-//     e = e || win.event;
-//     preventDefault(e);
-
-//     // var etype = that.devicetype === 'wap' ? (e.touches[0] || e.changedTouches[0]) : e;
-//     var etype = e.touches && e.touches[0] || e.changedTouches && e.changedTouches[0] || e;
-
-//     addClass(slideButton, 'vcode-slide-button-focus');
-//     // 自定义颜色需求 add
-//     if (that.conf.slideConfig && that.conf.slideConfig.color) {
-//         slideCover.style.background = that.conf.slideConfig.color || '#4b96ea';
-//         // slideButton.style.background = that.conf.slideConfig.color || '#4b96ea';
-//         // slideButton.style.border = that.conf.slideConfig.color || '#4b96ea';
-//     }
-
-//     that.currentX = etype.clientX;
-// };
-// // 移动事件处理
-// var eventMoveFn = function (e) {
-//     // me.start 兼容pc端 否则mousemove事件 一经过按钮就会触发滑动
-//     if (that.finish || !that.start) {
-//         return false;
-//     }
-//     // 根据开关控制滑块条中间的提示文字显示隐藏
-//     that.store.ExteriorSwitch && addClass(slideTips, 'hide');
-
-//     e = e || win.event;
-//     preventDefault(e);
-//     // var etype = that.devicetype === 'wap' ? e.changedTouches[0] : e;
-//     var etype = e.changedTouches && e.changedTouches[0] || e;
-//     var changeX = (etype.clientX - that.currentX);
-//     var maxChangeX = $('.vcode-slide-bottom').width() - $('.vcode-slide-button').width();
-//     // 设置两个极端情况
-//     if (changeX >= maxChangeX - 5) {
-//         changeX = maxChangeX;
-//         that.finish = true;
-//         // successUiCallback();
-//         slideFinish();
-//     }
-//     else if (changeX <= 0) {
-//         changeX = 0;
-//     }
-//     var percentage = parseFloat(changeX / maxChangeX).toFixed(2);
-//     // 蓝色进度条 更改宽度
-//     slideCover.style.width = (changeX + slideButtonWidth) + 'px';
-
-//     if (ieVersion && +ieVersion <= 9) {
-//         slideButton.style['margin-left'] = changeX + 'px';
-//         slideExpression.style['margin-left'] = (-563 * percentage) + 'px';
-//         bottomP.style['margin-left'] = (-75 + changeX * 0.1) + 'px';
-//     }
-//     else {
-//         slideButton.style.transform = 'translateX(' + changeX + 'px)';
-//         slideButton.style.msTransform = 'translateX(' + changeX + 'px)';
-//         slideButton.style.webkitTransform = 'translateX(' + changeX + 'px)';
-//         slideButton.style.MozTransform = 'translateX(' + changeX + 'px)';
-//         slideButton.style.OTransform = 'translateX(' + changeX + 'px)';
-//         // slideButton.setAttribute('style', 'transform:translateX(' + changeX + 'px)');
-//         slideExpression.style.transform = 'translateX(-' + (percentage * 89.5) + '%)';
-//         slideExpression.style.msTransform = 'translateX(-' + (percentage * 89.5) + '%)';
-//         slideExpression.style.webkitTransform = 'translateX(-' + (percentage * 89.5) + '%)';
-//         slideExpression.style.MozTransform = 'translateX(-' + (percentage * 89.5) + '%)';
-//         slideExpression.style.OTransform = 'translateX(-' + (percentage * 89.5) + '%)';
-//         // slideExpression.setAttribute('style', 'transform:translateX(-' + (percentage * 89.5) + '%)');
-//         bottomP.style.transform = 'translateX(' + (percentage * 10) + '%)';
-//     }
-// };
-// // 接触结束事件处理
-// var eventEndFn = function (e) {
-//     if (!that.start) {
-//         return false;
-//     }
-//     that.start = false;
-//     e = e || win.event;
-//     preventDefault(e);
-//     // var etype = that.devicetype === 'wap' ? e.changedTouches[0] : e;
-//     var etype = e.changedTouches && e.changedTouches[0] || e;
-
-//     var changeX = etype.clientX - this.currentX;
-//     if (changeX <= 0) {
-//         removeClass(slideButton, 'vcode-slide-button-focus');
-//         // 自定义颜色需求 remove
-//         if (that.conf.slideConfig && that.conf.slideConfig.color) {
-//             slideButton.style = '';
-//         }
-
-//         removeClass(slideButton, 'vcode-slide-button-error');
-//     }
-//     else if (!that.finish) {
-//         rollbackUi();
-//     }
-//     return false;
-// };
