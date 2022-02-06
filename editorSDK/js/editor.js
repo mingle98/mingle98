@@ -471,7 +471,12 @@ window.onload = function (){
                 trimmingBoxBottom: 0,
                 trimmingBoxleft: 0,
                 trimmingBoxright: 0,
-
+                // 首次初始化好的图片信息
+                initImgEle: null,
+                initImgEleWidth: 0,
+                initImgEleHeight: 0,
+                imgOriginScaleNum: 1,
+                imgOriginWH: 0,
             };
             console.log('options:', this.options);
             // 基础工具
@@ -517,7 +522,7 @@ window.onload = function (){
                                             '</div>' +
                                         '</div>' +
                                     '</div>' +
-                                    '<canvas class="canvas"></canvas>' +
+                                    '<canvas class="canvas" id="' + $id_prefix + '_canvas"></canvas>' +
                                 '</div>';
 
             var editorToolTpl = '<div class="editor-toolBar" id="' + $id_prefix + '_editor-toolBar">' +
@@ -805,6 +810,8 @@ window.onload = function (){
             // 选择
             var selectFn = function () {
                 console.log('select');
+                // canvas绘制
+                me.draw();
             };
             this.base.addEventHandler(this.base.getEleById('_tool-redo'), 'click', redoFn);
             this.base.addEventHandler(this.base.getEleById('_tool-rotate'), 'click', rotateFn);
@@ -935,7 +942,8 @@ window.onload = function (){
         };
         // 初始化尺寸
         initSize() {
-            // 设置编辑器尺寸
+            let me = this;
+            // 设置编辑器body尺寸
             if (this.options.module === 'dialog') {
                 if (+this.store.equipmentW <= 460) {
                     this.base.getEleById('_editor-body').style = `width:${this.store.equipmentW * this.store.editorProportion}px;
@@ -989,7 +997,7 @@ window.onload = function (){
                  this.store.trimmingBoxBottom = (this.options.editorH - this.store.height) / 2;
             };
             // 图片居中
-            this.setImgCenter();
+            me.setImgCenter();
         };
         // 图片变化更新 方向
         updateImgChange(type, scaleNum, directionType, directionNum) {
@@ -1064,50 +1072,69 @@ window.onload = function (){
             var me = this;
             var imgTop;
             var imgLeft;
-            if (!type) {
-                // 初始化居中
-                this.base.getEleById('_editor-img').onload = function () {
-                    var imgWidth = me.base.getEleById('_editor-img').width;
-                    var imgHeight = me.base.getEleById('_editor-img').height;
-                    me.store.imgWidth = imgWidth;
-                    me.store.imgHeight = imgHeight;
-                    // 图片平移距离
-                    if (+me.store.equipmentW <= 460) {
-                        imgTop = ((me.store.equipmentW * me.store.editorProportion) / me.store.editorWH - me.store.imgHeight) / 2;
-                        imgLeft = 0;
+            var setCenterFn = function (callback) { 
+                // 根据编辑器body宽高比例调整img实际尺寸
+                var imgOriginWH, imgOriginScaleNum;
+                var editorBodyWH = parseInt(me.base.getEleById('_editor-body').style.width) / parseInt(me.base.getEleById('_editor-body').style.height);
+                var tempImgElm = new Image();
+                tempImgElm.src = me.options.uploadImg;
+                tempImgElm.onload = function () { 
+                    me.store.imgOriginWH = imgOriginWH = tempImgElm.width / tempImgElm.height;
+                    if (editorBodyWH > imgOriginWH) {
+                        me.base.getEleById('_editor-img').style.height = '100%';
+                        me.base.getEleById('_editor-img').style.width = 'auto';
+                        me.store.imgOriginScaleNum = imgOriginScaleNum = me.base.getEleById('_editor-img').height / tempImgElm.height;
                     }
                     else {
-                        imgTop = (me.options.editorH - me.store.imgHeight) / 2;
-                        imgLeft = 0;
+                        me.store.imgOriginScaleNum = imgOriginScaleNum = me.base.getEleById('_editor-img').width / tempImgElm.width;
+                    };
+                    me.store.imgWidth = me.store.initImgEleWidth = tempImgElm.width * me.store.imgOriginScaleNum;
+                    me.store.imgHeight = me.store.initImgEleHeight = tempImgElm.height * me.store.imgOriginScaleNum;
+
+                    // 初始化居中
+                    if (editorBodyWH > imgOriginWH) {
+                        // 图片平移距离
+                        if (+me.store.equipmentW <= 460) {
+                            imgTop = 0;
+                            imgLeft = (me.store.equipmentW * me.store.editorProportion - me.store.imgWidth) / 2;;
+                        }
+                        else {
+                            imgTop = 0;
+                            imgLeft = (me.options.editorW - me.store.imgWidth) / 2;
+                        };
+                    }
+                    else {
+                        // 图片平移距离
+                        if (+me.store.equipmentW <= 460) {
+                            imgTop = ((me.store.equipmentW * me.store.editorProportion) / me.store.editorWH - me.store.imgHeight) / 2;
+                            imgLeft = 0;
+                        }
+                        else {
+                            imgTop = (me.options.editorH - me.store.imgHeight) / 2;
+                            imgLeft = 0;
+                        };
                     };
                     // 更新数据
                     me.store.imgLeft = imgLeft;
                     me.store.imgTop= imgTop;
-                    me.base.getEleById('_editor-img').style = `transform:translate3d(${imgLeft}px, ${imgTop}px, 0) scale(${me.store.imgScale})`;
+                    tempImgElm = null;
+                    callback && callback();
                 };
-                // console.log('图片的宽高：', imgWidth, imgHeight);
+            };
+            if (!type) {
+                setCenterFn(function () { 
+                    me.base.getEleById('_editor-img').style.transform = `translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale})`;
+                });
             }
             else if (type && type === 'center') {
-                var imgWidth = me.base.getEleById('_editor-img').width;
-                var imgHeight = me.base.getEleById('_editor-img').height;
-                me.store.imgWidth = imgWidth;
-                me.store.imgHeight = imgHeight;
-                // 图片平移距离
-                if (+me.store.equipmentW <= 460) {
-                    imgTop = ((me.store.equipmentW * me.store.editorProportion) / me.store.editorWH - me.store.imgHeight) / 2;
-                    imgLeft = 0;
-                }
-                else {
-                    imgTop = (me.options.editorH - me.store.imgHeight) / 2;
-                    imgLeft = 0;
-                };
-                // 更新数据
-                me.store.imgLeft = imgLeft;
-                me.store.imgTop= imgTop;
-                me.base.getEleById('_editor-img').style = `transform:translate3d(${imgLeft}px, ${imgTop}px, 0) scale(${me.store.imgScale});transition: none;`;
+                setCenterFn(function () { 
+                    me.base.getEleById('_editor-img').style.transform = `translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale})`;
+                    me.base.getEleById('_editor-img').style.transition = `none`;
+                });
                 me.store.rotateAngle = 0;
                 setTimeout(_ => {
-                    me.base.getEleById('_editor-img').style = `transform:translate3d(${imgLeft}px, ${imgTop}px, 0) scale(${me.store.imgScale});transition: all .1s linear`;
+                    me.base.getEleById('_editor-img').style.transform = `translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale})`;
+                    me.base.getEleById('_editor-img').style.transition = `all .1s linear`;
                 }, 300);
             }
             else if (type && type === 'rotate') {
@@ -1212,6 +1239,30 @@ window.onload = function (){
         updateEditorBoxChange() {
 
         };
+        // canvas绘制
+        draw() {
+            // var img = ;
+            var canvas = document.getElementById('canvas')
+            var ctx = canvas.getContext("2d");
+            // 形变函数
+            var transformFn = function (ctx, img, x, y, width, height, scale, rotate, callback) {
+                width *= scale
+                height *= scale
+                // 切换画布中心点->旋转画布->切回画布原来中心点// 此时画布已经旋转过
+                ctx.translate(x + width / 2, y + height / 2);
+                ctx.rotate(rotate / 180 * Math.PI, rotate / 180 * Math.PI);
+                ctx.translate(-(x + width / 2), -(y + height / 2));
+                // 放大
+                ctx.scale(scale, scale);
+                ctx.drawImage(img, x / scale, y / scale);    // 不放大x和y
+                // 缩回原来大小
+                ctx.scale(1 / scale, 1 / scale);
+                // 切换画布中心点->旋转画布->切回画布原来中心点// 将画布旋转回之前的角度
+                ctx.translate(x + width / 2, y + height / 2);
+                ctx.rotate(-rotate / 180 * Math.PI, -rotate / 180 * Math.PI);
+                ctx.translate(-(x + width / 2), -(y + height / 2));
+              }
+        };
     };
 
 
@@ -1235,7 +1286,7 @@ window.onload = function (){
         // 编辑器主体宽高比例（视口宽<460px生效，默认2/3）
         editorWH: 2/3,
         // 是否禁用手指拖动功能
-        disableTouch: false,
+        disableTouch: true,
         // 禁用手指拖动功能时自定义步长 单位px
         disableTouchStepLen: 40,
         // 传入的图片
