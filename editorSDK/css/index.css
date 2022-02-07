@@ -255,11 +255,48 @@
     line-height: 1.2rem;
 }
 
-.canvas {
-    width: 100%;
-    height: 300px;
+.canvas-box {
     position: absolute;
-    background-color: red;
+    z-index: 99999;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
+    background-color: rgb(0, 0, 0);
+}
+
+.editor-back-arrow {
+    position: absolute;
+    content: '';
+    width: 30px;
+    height: 30px;
+    background: url(../img/leftArrow.png) no-repeat center center;
+    background-size: 100% 100%;
+    left: 10px;
+    top: 30px;
+}
+
+.canvas {
+    /* width: 100%;
+    height: 300px; */
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgb(255, 255, 255);
+}
+
+.download-tip {
+    display: none;
+    width: 100px;
+    height: 20px;
+    line-height: 20px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 10%;
+    text-align: center;
 }
 
 .editor-dialog-mask {

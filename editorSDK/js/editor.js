@@ -387,6 +387,18 @@ window.onload = function (){
                 }
             }
             return flag;
+        };
+        // 18.延时函数
+        async sleep(delay = 500) {
+            var fn = function () {
+                return new Promise((resolve, reject) => {
+                    setTimeout(_ => {
+                        resolve();
+                        console.log('sleep...', delay);
+                    }, delay);
+                })
+            };
+            await fn();
         }
     };
 
@@ -522,7 +534,11 @@ window.onload = function (){
                                             '</div>' +
                                         '</div>' +
                                     '</div>' +
-                                    '<canvas class="canvas" id="' + $id_prefix + '_canvas"></canvas>' +
+                                    '<div class="canvas-box" id="' + $id_prefix + '_canvas-box">' +
+                                        '<div class="editor-back-arrow" id="' + $id_prefix + '_editor-back-arrow"></div>' +
+                                        '<canvas class="canvas" id="' + $id_prefix + '_canvas"></canvas>' +
+                                        '<div class="download-tip" id="' + $id_prefix + '_download-tip"></div>' +
+                                    '</div>' +
                                 '</div>';
 
             var editorToolTpl = '<div class="editor-toolBar" id="' + $id_prefix + '_editor-toolBar">' +
@@ -793,6 +809,7 @@ window.onload = function (){
             // 3.工具栏行为_tool-redo
             // 撤销
             var redoFn = function () {
+                closeResPage();
                 console.log('redo');
                 // 触发hook
                 me.options.onRedo();
@@ -803,16 +820,19 @@ window.onload = function (){
             };
             // 旋转
             var rotateFn = function () {
+                closeResPage();
                 console.log('rotate')
                 // 图片归位
                 me.setImgCenter('rotate');
             };
             // 重选
             var selectFn = function () {
+                closeResPage();
                 let newUrl = prompt('输入新图片URL');
-                if (!/(\w+):\/\/([^/:]+)(:\d*)?([^# ]*)/.test(newUrl)) {
+                if (newUrl && !/(\w+):\/\/([^/:]+)(:\d*)?([^# ]*)/.test(newUrl)) {
                     return alert('url格式错误，请重新输入');
                 };
+                if (!newUrl) return;
                 let img = new Image();
                 img.src = newUrl;
                 img.onerror = function () { 
@@ -831,16 +851,22 @@ window.onload = function (){
             };
             // 选好了 _tool-ok
             var confirmFn = function () {
+                closeResPage();
                 console.log('confirmFn');
                 // canvas绘制
                 me.draw();
             };
+            // 如果处于结果状态页面先关闭结果页面
+            var closeResPage = async function () {
+                me.base.getEleById('_canvas-box').style.display === 'block' && (me.base.getEleById('_canvas-box').style.display = 'none');
+                await me.base.sleep();
+            }
             this.base.addEventHandler(this.base.getEleById('_tool-redo'), 'click', redoFn);
             this.base.addEventHandler(this.base.getEleById('_tool-rotate'), 'click', rotateFn);
             this.base.addEventHandler(this.base.getEleById('_tool-select'), 'click', selectFn);
             this.base.addEventHandler(this.base.getEleById('_tool-ok'), 'click', confirmFn);
 
-            // 4. 上下左右移动箭头按钮事件 _editor-top-arrow、_editor-bottom-arrow、_editor-left-arrow、_editor-right-arrow
+            // 4. 上下左右移动箭头按钮事件 _editor-top-arrow、_editor-bottom-arrow、_editor-left-arrow、_editor-right-arrow\_canvas-box、_editor-back-arrow
             var arrowChangeOp = function (type) {
                 let step = Math.abs(options.disableTouchStepLen);
                 switch (type) {
@@ -876,6 +902,9 @@ window.onload = function (){
             this.base.addEventHandler(this.base.getEleById('_editor-right-arrow'), 'click', () => {arrowChangeOp('right');});
             this.base.addEventHandler(this.base.getEleById('_editor-big-icon'), 'click', () => {arrowChangeOp('big');});
             this.base.addEventHandler(this.base.getEleById('_editor-small-icon'), 'click', () => {arrowChangeOp('small');});
+            this.base.addEventHandler(this.base.getEleById('_editor-back-arrow'), 'click', () => {
+                me.base.toggleShow(this.base.getEleById('_canvas-box'));
+            });
         };
         // 绑定事件函数库（保证兼容性）
         bindEventStore(bindEle, eventType, customizeFn) {
@@ -1146,7 +1175,7 @@ window.onload = function (){
             if (!type) {
                 setCenterFn(function () { 
                     me.base.getEleById('_editor-img').style.transform = `translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale})`;
-                    me.detectionImgScale();
+                    me.detectionImgScale('init');
                 });
             }
             else if (type && type === 'center') {
@@ -1209,7 +1238,7 @@ window.onload = function (){
             me.base.getEleById('_editor-img').style = `transform:translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale})`;
         };
         // 检图片边缘---缩放
-        detectionImgScale() {
+        detectionImgScale(init) {
             let me = this;
             var scale = this.store.imgScale;
             this.updateStore();
@@ -1230,6 +1259,11 @@ window.onload = function (){
             };
             currentTransform += ` scale(${me.store.imgScale})`;
             me.base.getEleById('_editor-img').style.transform = currentTransform;
+            // 将首次初始化好的图片存起来一份
+           if (init && !me.store.initImgEle) {
+            let cloneToStoreImg = me.base.getEleById('_editor-img').cloneNode(true);
+            me.store.initImgEle = cloneToStoreImg;
+           };
         };
         // 更新store中的数据
         updateStore() {
@@ -1267,27 +1301,65 @@ window.onload = function (){
         };
         // canvas绘制
         draw() {
-            // var img = ;
-            var canvas = document.getElementById('canvas')
+            let me = this;
+            // var img = me.store.initImgEle;
+            var img = me.base.getEleById('_editor-img');
+            img.crossOrigin = "Anonymous";
+            var canvas = me.base.getEleById('_canvas')
+            canvas.width = me.store.width;
+            canvas.height = me.store.height;
             var ctx = canvas.getContext("2d");
             // 形变函数
-            var transformFn = function (ctx, img, x, y, width, height, scale, rotate, callback) {
-                width *= scale
-                height *= scale
+            /**
+             * @param  ctx:  画布
+             * @param  img:  图片
+             * @param  x     最终渲染x轴坐标
+             * @param  y     最终渲染y轴坐标
+             * @param  width     图片原始w
+             * @param  height    图片原始h
+             * @param  scale     缩放比例
+             * @param  rotate     旋转角度
+             */
+            var transformFn = async function (ctx, img, imgx, imgy, imgwidth, imgheight, dx, dy, dwidth, dheight, scale, rotate, callback) {
+                let currentScaleNum = scale * me.store.imgOriginScaleNum;
+                imgwidth = imgwidth / currentScaleNum;
+                imgheight = imgheight / currentScaleNum;
                 // 切换画布中心点->旋转画布->切回画布原来中心点// 此时画布已经旋转过
-                ctx.translate(x + width / 2, y + height / 2);
-                ctx.rotate(rotate / 180 * Math.PI, rotate / 180 * Math.PI);
-                ctx.translate(-(x + width / 2), -(y + height / 2));
-                // 放大
-                ctx.scale(scale, scale);
-                ctx.drawImage(img, x / scale, y / scale);    // 不放大x和y
-                // 缩回原来大小
-                ctx.scale(1 / scale, 1 / scale);
-                // 切换画布中心点->旋转画布->切回画布原来中心点// 将画布旋转回之前的角度
-                ctx.translate(x + width / 2, y + height / 2);
-                ctx.rotate(-rotate / 180 * Math.PI, -rotate / 180 * Math.PI);
-                ctx.translate(-(x + width / 2), -(y + height / 2));
-              }
+                let degrees =  rotate * Math.PI / 180;
+                ctx.translate(dx + dwidth / 2, dy + dheight / 2);
+                ctx.rotate(degrees);
+                ctx.translate(-(dx + dwidth / 2), -(dy + dheight / 2));
+                ctx.drawImage(img, imgx, imgy, imgwidth, imgheight, dx, dy, dwidth, dheight);
+                await me.base.sleep();
+                me.base.getEleById('_canvas-box').style.display = 'block';
+                callback();
+            };
+            // 将canvas转化成图片 下载
+            function saveAsImage() {
+                try {
+                    var image = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream"); 
+                    var a = document.createElement("a");
+                    a.id = 'link';
+                    document.body.appendChild(a);
+                    var link = document.getElementById('link');
+                    link.setAttribute('download', 'my.png');
+                    link.setAttribute('href', image);
+                    link.click();
+                    document.body.removeChild(link);
+                    me.base.getEleById('_download-tip').innerText = '下载成功!';
+                    me.base.getEleById('_download-tip').style = 'color: green;';
+                    me.base.getEleById('_download-tip').style.display = 'block';
+                } catch (error) {
+                    me.base.getEleById('_download-tip').innerText = '下载失败!';
+                    me.base.getEleById('_download-tip').style = 'color: red;'
+                    me.base.toggleShow(me.base.getEleById('_download-tip'));
+                    me.base.getEleById('_download-tip').style.display = 'block';
+                };
+            };
+
+            me.updateStore();
+            // console.log('信息',img, img.width, img.height, me.store.imgWidth, me.store.imgHeight,  me.store.width, me.store.height,me.store.imgScale, me.store.rotateAngle)
+            transformFn(ctx, img, 0, 0, me.store.width, me.store.height, 0, 0, me.store.width,  me.store.height, me.store.imgScale, me.store.rotateAngle, saveAsImage);
         };
     };
 
@@ -1298,7 +1370,7 @@ window.onload = function (){
 
     let options = {
         // 弹窗模式或则嵌入模式
-        module: 'dialog',
+        module: 'dialog1',
         // 主体编辑器容器id
         id: 'editorBox',
         // 编辑器工具容器id
