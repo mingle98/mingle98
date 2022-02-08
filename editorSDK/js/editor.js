@@ -1305,7 +1305,6 @@ class ImgEditor {
         canvas.width = me.store.width;
         canvas.height = me.store.height;
         var ctx = canvas.getContext("2d");
-        console.log('draw...', ctx, img, me.store.imgToCanvasX, me.store.imgToCanvasY, me.store.width, me.store.height, me.store.width,  me.store.height, me.store.imgScale, me.store.rotateAngle)
         // 形变函数
         /**
          * @param  ctx:  画布
@@ -1353,7 +1352,6 @@ class ImgEditor {
                 me.base.getEleById('_download-tip').style.display = 'block';
             };
         };
-
         me.updateStore();
         me.store.imgToCanvasX = me.store.trimmingBoxleft - me.store.imgLeft;
         me.store.imgToCanvasY = me.store.trimmingBoxTop - me.store.imgTop;
