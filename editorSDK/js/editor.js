@@ -1246,14 +1246,18 @@ class ImgEditor {
           imgWidth = me.store.imgHeight;
           imgHeight = me.store.imgWidth;
         };
-        left = me.store.trimmingBoxleft + imgWidth * scale / 2 >= left ? left : me.store.trimmingBoxleft + imgWidth * scale / 2;
-        left = me.store.trimmingBoxleft + me.store.width - imgWidth * scale / 2 <= left ? left : me.store.trimmingBoxleft + me.store.width - imgWidth * scale / 2;
-        top = me.store.trimmingBoxTop + imgHeight * scale / 2 >= top ? top : me.store.trimmingBoxTop + imgHeight * scale / 2;
-        top = me.store.trimmingBoxTop + me.store.height - imgHeight * scale / 2 <= top ? top : me.store.trimmingBoxTop + me.store.height - imgHeight * scale / 2;
+        left = me.store.trimmingBoxleft + imgWidth * scale / 2 >= left
+            ? left : me.store.trimmingBoxleft + imgWidth * scale / 2;
+        left = me.store.trimmingBoxleft + me.store.width - imgWidth * scale / 2 <= left
+            ? left : me.store.trimmingBoxleft + me.store.width - imgWidth * scale / 2;
+        top = me.store.trimmingBoxTop + imgHeight * scale / 2 >= top
+            ? top : me.store.trimmingBoxTop + imgHeight * scale / 2;
+        top = me.store.trimmingBoxTop + me.store.height - imgHeight * scale / 2 <= top
+            ? top : me.store.trimmingBoxTop + me.store.height - imgHeight * scale / 2;
         // 更新数据
         me.store.imgLeft = left - me.store.imgWidth / 2;
         me.store.imgTop = top - me.store.imgHeight / 2;
-        console.log('ok====>', me.store.imgLeft, me.store.imgTop, me.store.trimmingBoxleft, me.store.trimmingBoxTop, me.store.imgToCanvasX, me.store.imgToCanvasY)
+        // console.log('ok====>', me.store.imgLeft, me.store.imgTop, me.store.trimmingBoxleft, me.store.trimmingBoxTop, me.store.imgToCanvasX, me.store.imgToCanvasY)
         me.base.getEleById('_editor-img').style.transform = `translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale}) rotate(${me.store.rotateAngle}deg)`;
     };
     // 检图片边缘---缩放
@@ -1378,11 +1382,12 @@ class ImgEditor {
             };
         };
         me.updateStore();
-        me.store.mapRealCutProportionXDif = me.store.initImgEleWidth * me.store.imgScale * (me.store.imgScale - 1);
-        me.store.mapRealCutProportionYDif = me.store.initImgEleHeight * me.store.imgScale * (me.store.imgScale - 1);
-        me.store.imgToCanvasX = (me.store.trimmingBoxleft - me.store.imgLeft) / me.store.mapRealCutProportion + me.store.mapRealCutProportionXDif / 2;
-        me.store.imgToCanvasY = (me.store.trimmingBoxTop - me.store.imgTop) / me.store.mapRealCutProportion + me.store.mapRealCutProportionYDif / 2;
-        console.log('检图片边缘---位置=>', me.store.imgToCanvasX, me.store.imgToCanvasY, me.store.trimmingBoxleft,me.store.trimmingBoxTop, me.store.imgLeft, me.store.imgTop, currentScaleNum);
+        me.store.mapRealCutProportionXDif = me.store.initImgEleWidth * (me.store.imgScale - 1);
+        me.store.mapRealCutProportionYDif = me.store.initImgEleHeight * (me.store.imgScale - 1);
+        me.store.imgToCanvasX = (me.store.trimmingBoxleft - me.store.imgLeft) / me.store.mapRealCutProportion
+                                + me.store.mapRealCutProportionXDif * 0.5 / currentScaleNum;
+        me.store.imgToCanvasY = (me.store.trimmingBoxTop - me.store.imgTop) / me.store.mapRealCutProportion
+                                + me.store.mapRealCutProportionYDif * 0.5 / currentScaleNum;
         transformFn(ctx, img, me.store.imgToCanvasX, me.store.imgToCanvasY, me.store.width, me.store.height, 0, 0, me.store.width,  me.store.height, me.store.imgScale, me.store.rotateAngle, saveAsImage);
     };
 };
