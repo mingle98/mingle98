@@ -1353,7 +1353,7 @@ class ImgEditor {
                 a.id = 'link';
                 document.body.appendChild(a);
                 var link = document.getElementById('link');
-                link.setAttribute('download', 'my.png');
+                link.setAttribute('download', Date.now() + '.png');
                 link.setAttribute('href', image);
                 link.click();
                 document.body.removeChild(link);
