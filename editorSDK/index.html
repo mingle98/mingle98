@@ -70,6 +70,7 @@
 			id: 'editorBox',
 			// 编辑器工具容器id
 			toolid: 'toolBox',
+			// 嵌入模式下自定义编辑器主体宽高（最佳适配比例是2:3）（视口宽>460px生效）
 			editorW: 400,
 			editorH: 600,
 			// 编辑器主体的width（视口宽<460px生效，默认0.9）
@@ -111,7 +112,7 @@
 				console.log('onEndHook...')
 			}
 		};
-		let editorInstance = new ImgEditor(options);
+		window.mingleSDK && window.mingleSDK.initImgEditor(options);
 	</script>
 
 </body>

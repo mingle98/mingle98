@@ -1,3 +1,10 @@
+window.mingleSDK = window.mingleSDK ? window.mingleSDK : {};
+window.mingleSDK.initImgEditor = function(options) {
+    if (window.mingleSDK.imgEditorInstance) {
+        return indow.mingleSDK.imgEditorInstance;
+    };
+    !window.mingleSDK.imgEditorInstance && (window.mingleSDK.imgEditorInstance = new ImgEditor(options));
+};
 // 定义公共方法类
 class Base {
     constructor () {};
