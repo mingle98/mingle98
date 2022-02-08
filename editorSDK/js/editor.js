@@ -541,6 +541,12 @@ class ImgEditor {
                                     '<canvas class="canvas" id="' + $id_prefix + '_canvas"></canvas>' +
                                     '<div class="download-tip" id="' + $id_prefix + '_download-tip"></div>' +
                                 '</div>' +
+                                '<div class="loading-box" id="' + $id_prefix + '_loading-box">' +
+                                    '<div class="loading-icon" id="' + $id_prefix + '_loading-icon">' +
+                                        '<p class="loading-iocn-img" id="' + $id_prefix + '_oading-iocn-img"></p>' +
+                                        '<p class="loading-txt" id="' + $id_prefix + '_loading-txt">加载中</p>' +
+                                    '</div>' +
+                                '</div>' +
                             '</div>';
 
         var editorToolTpl = '<div class="editor-toolBar" id="' + $id_prefix + '_editor-toolBar">' +
@@ -1326,8 +1332,10 @@ class ImgEditor {
             ctx.rotate(degrees);
             ctx.translate(-(dx + dwidth / 2), -(dy + dheight / 2));
             ctx.drawImage(img, imgx, imgy, imgwidth, imgheight, dx, dy, dwidth, dheight);
+            me.base.getEleById('_loading-box').style.display = 'block';
             await me.base.sleep();
             me.base.getEleById('_canvas-box').style.display = 'block';
+            me.base.getEleById('_loading-box').style.display = 'none';
             callback();
         };
         // 将canvas转化成图片 下载
