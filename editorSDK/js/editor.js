@@ -619,7 +619,7 @@ class ImgEditor {
         // 是否禁用touch
         if (!this.options.disableTouch) {
             this.base.getEleById('_editor-2-arrowBox').style.display = 'none';
-            this.base.getEleById('_editor-1-arrowBox').style.display = 'none';
+            // this.base.getEleById('_editor-1-arrowBox').style.display = 'none';
         }
         this.setEvent();
         // 初始化
