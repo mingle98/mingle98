@@ -1050,6 +1050,7 @@ class ImgEditor {
                 this.store.trimmingBoxBottom = (this.options.editorH - this.store.height) / 2;
         };
         // 图片居中
+        !me.base.getEleById('_editor-img').crossOrigin && (me.base.getEleById('_editor-img').crossOrigin = "Anonymous");
         me.setImgCenter();
     };
     // 图片变化更新 方向
@@ -1127,7 +1128,7 @@ class ImgEditor {
         var me = this;
         var imgTop;
         var imgLeft;
-        var setCenterFn = function (callback) { 
+        var setCenterFn = function (callback) {
             // 根据编辑器body宽高比例调整img实际尺寸
             var imgOriginWH, imgOriginScaleNum;
             var editorBodyWH = parseInt(me.base.getEleById('_editor-body').style.width) / parseInt(me.base.getEleById('_editor-body').style.height);
@@ -1204,6 +1205,7 @@ class ImgEditor {
             };
             currentTransform += ` rotate(${me.store.rotateAngle}deg)`;
             me.base.getEleById('_editor-img').style.transform = currentTransform;
+            me.detectionImgPos();
         };
     };
     // 检图片边缘---位置
@@ -1298,13 +1300,12 @@ class ImgEditor {
     // canvas绘制
     draw() {
         let me = this;
-        // var img = me.store.initImgEle;
         var img = me.base.getEleById('_editor-img');
-        img.crossOrigin = "Anonymous";
         var canvas = me.base.getEleById('_canvas')
         canvas.width = me.store.width;
         canvas.height = me.store.height;
         var ctx = canvas.getContext("2d");
+        console.log('draw...', ctx, img, me.store.imgToCanvasX, me.store.imgToCanvasY, me.store.width, me.store.height, me.store.width,  me.store.height, me.store.imgScale, me.store.rotateAngle)
         // 形变函数
         /**
          * @param  ctx:  画布
@@ -1354,8 +1355,8 @@ class ImgEditor {
         };
 
         me.updateStore();
-        me.store.imgToCanvasX = me.store.trimmingBoxleft - me.store.imgLeft * currentScaleNum;
-        me.store.imgToCanvasY = me.store.trimmingBoxTop - me.store.imgTop * currentScaleNum;
+        me.store.imgToCanvasX = me.store.trimmingBoxleft - me.store.imgLeft;
+        me.store.imgToCanvasY = me.store.trimmingBoxTop - me.store.imgTop;
         console.log('检图片边缘---位置=>', me.store.imgToCanvasX, me.store.imgToCanvasY, me.store.trimmingBoxleft,me.store.trimmingBoxTop, me.store.imgLeft, me.store.imgTop, currentScaleNum);
         transformFn(ctx, img, me.store.imgToCanvasX, me.store.imgToCanvasY, me.store.width, me.store.height, 0, 0, me.store.width,  me.store.height, me.store.imgScale, me.store.rotateAngle, saveAsImage);
     };
