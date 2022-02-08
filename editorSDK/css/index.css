@@ -16,10 +16,6 @@
 .editor-img {
     width: 100%;
     position: absolute;
-    
-    /* top: 50%;
-    left: 50%; */
-    /* transform: translate(-50%, -50%); */
     z-index: 1;
     transition: all .1s linear;
 }
@@ -72,8 +68,8 @@
 }
 
 .editor-top-arrow, .editor-bottom-arrow, .editor-left-arrow, .editor-right-arrow, .editor-big-icon, .editor-small-icon  {
-    height: 30px;
-    width: 30px;
+    height: 20px;
+    width: 20px;
     background-color: blueviolet;
 }
 
@@ -98,12 +94,12 @@
 }
 
 .editor-big-icon {
-    background: url(../img/jiahao.png) no-repeat center center;
+    background: url(../img/fangda.png) no-repeat center center;
     background-size: 100% 100%;
 }
 
 .editor-small-icon {
-    background: url(../img/jianhao.png) no-repeat center center;
+    background: url(../img/suoxiao.png) no-repeat center center;
     background-size: 100% 100%;
 }
 

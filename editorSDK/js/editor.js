@@ -488,6 +488,9 @@ class ImgEditor {
             initImgEleHeight: 0,
             imgOriginScaleNum: 1,
             imgOriginWH: 0,
+            // 用于绘制在canvas上的img的对应的起始点坐标X\Y
+            imgToCanvasX: 0,
+            imgToCanvasY: 0,
         };
         console.log('options:', this.options);
         // 基础工具
@@ -795,7 +798,7 @@ class ImgEditor {
             me.store.imgmouseStartP = [];
             me.store.imgmouseMoveP = [];
             // 检测图片边缘
-            // me.detectionImgPos();
+            me.detectionImgPos();
         };
         if (!me.options.disableTouch) {
             me.base.addEventHandler(editorBox, 'mousedown', ImgElemDownFn);
@@ -1080,13 +1083,13 @@ class ImgEditor {
                     afterImgLeft = me.store.imgLeft + me.store.imgTransForXY.x;
                     afterImgTop = me.store.imgTop + me.store.imgTransForXY.y;
                 };
-                console.log('position=>', me.store.imgLeft, afterImgLeft, me.store.imgTop, afterImgTop);
+                // console.log('position=>', me.store.imgLeft, afterImgLeft, me.store.imgTop, afterImgTop);
                 currentTransform = `translate3d(${afterImgLeft}px, ${afterImgTop}px, 0) scale(${me.store.imgScale}) rotate(${me.store.rotateAngle}deg)`;
                 imgElem.style.transform = currentTransform;
                 // 更新数据
                 me.store.imgLeft = afterImgLeft;
                 me.store.imgTop = afterImgTop;
-                // me.detectionImgPos();
+                me.detectionImgPos();
                 break;
             case 'scale':
                 var resSacle = (scaleNum === 0) ? 1 : me.store.imgScale * scaleNum;
@@ -1111,6 +1114,8 @@ class ImgEditor {
                 };
                 currentTransform += ` scale(${me.store.imgScale})`;
                 me.base.getEleById('_editor-img').style.transform = currentTransform;
+                // 检测图片边缘
+                me.detectionImgPos();
                 break;
             default:
                 console.log('操作错误');
@@ -1204,37 +1209,29 @@ class ImgEditor {
     // 检图片边缘---位置
     detectionImgPos(type) {
         var me = this;
+        var imgElem = this.base.getEleById('_editor-img');
         if (this.store.limitMove) {
             return;
         };
-        // 左边界
-        // me.store.imgLeft = Math.abs(me.store.imgLeft) > Math.abs(me.store.trimmingBoxleft)
-        // ? me.store.trimmingBoxleft : me.store.imgLeft;
-        // if (Math.abs(me.store.imgLeft) > Math.abs(me.store.trimmingBoxleft)) {
-        //     me.store.imgLeft = me.store.trimmingBoxleft > 0 ? me.store.trimmingBoxleft : - me.store.trimmingBoxleft;
-        // }
-        // // 上边界
-        // me.store.imgTop = Math.abs(me.store.imgTop) > Math.abs(me.store.trimmingBoxTop)
-        //             ? me.store.trimmingBoxTop : me.store.imgTop;
-        // me.base.getEleById('_editor-img').style = `transform:translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale})`;
-
         // 更新相关的数据
         me.updateStore();
-        let left = me.store.trimmingBoxleft + me.store.imgWidth * me.store.imgScale / 2 >= me.store.imgLeft
-                ? me.store.imgLeft : me.store.trimmingBoxleft + me.store.imgLeft * me.store.imgScale  / 2;
-        // left = me.store.trimmingBoxleft
-        //       + me.store.width - me.store.imgWidth * me.store.imgScale / 2 <= me.store.imgLeft
-        //       ? me.store.imgLeft : me.store.trimmingBoxleft + me.store.width - me.store.imgWidth * me.store.imgScale / 2;
-
-        let top = me.store.trimmingBoxTop + me.store.imgHeight * me.store.imgScale  / 2 >= me.store.trimmingBoxTop
-                ? me.store.trimmingBoxTop :  me.store.trimmingBoxTop +  + me.store.imgHeight * me.store.imgScale  / 2;
-        // top = me.store.trimmingBoxTop + me.store.height - me.store.imgHeight * me.store.imgScale / 2 <= me.store.trimmingBoxTop
-        //     ? me.store.trimmingBoxTop : me.store.trimmingBoxTop + me.store.height - me.store.imgHeight * me.store.imgScale / 2;
+        let left = me.store.imgLeft + me.store.imgWidth / 2;
+        let top = me.store.imgTop + me.store.imgHeight / 2;
+        var scale = me.store.imgScale;
+        let imgWidth = me.store.imgWidth;
+        let imgHeight = me.store.imgHeight;
+        if (me.store.rotateAngle / 90 % 2) {
+          imgWidth = me.store.imgHeight;
+          imgHeight = me.store.imgWidth;
+        };
+        left = me.store.trimmingBoxleft + imgWidth * scale / 2 >= left ? left : me.store.trimmingBoxleft + imgWidth * scale / 2;
+        left = me.store.trimmingBoxleft + me.store.width - imgWidth * scale / 2 <= left ? left : me.store.trimmingBoxleft + me.store.width - imgWidth * scale / 2;
+        top = me.store.trimmingBoxTop + imgHeight * scale / 2 >= top ? top : me.store.trimmingBoxTop + imgHeight * scale / 2;
+        top = me.store.trimmingBoxTop + me.store.height - imgHeight * scale / 2 <= top ? top : me.store.trimmingBoxTop + me.store.height - imgHeight * scale / 2;
         // 更新数据
-        console.log('边缘检测：', top, left, me.store.trimmingBoxleft,me.store.imgWidth ,me.store.imgScale)
-        me.store.imgLeft = left;
-        me.store.imgTop = top;
-        me.base.getEleById('_editor-img').style = `transform:translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale})`;
+        me.store.imgLeft = left - me.store.imgWidth / 2;
+        me.store.imgTop = top - me.store.imgHeight / 2;
+        me.base.getEleById('_editor-img').style.transform = `translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale}) rotate(${me.store.rotateAngle}deg)`;
     };
     // 检图片边缘---缩放
     detectionImgScale(init) {
@@ -1319,8 +1316,8 @@ class ImgEditor {
          * @param  scale     缩放比例
          * @param  rotate     旋转角度
          */
+        let currentScaleNum = me.store.imgScale * me.store.imgOriginScaleNum;
         var transformFn = async function (ctx, img, imgx, imgy, imgwidth, imgheight, dx, dy, dwidth, dheight, scale, rotate, callback) {
-            let currentScaleNum = scale * me.store.imgOriginScaleNum;
             imgwidth = imgwidth / currentScaleNum;
             imgheight = imgheight / currentScaleNum;
             // 切换画布中心点->旋转画布->切回画布原来中心点// 此时画布已经旋转过
@@ -1357,7 +1354,9 @@ class ImgEditor {
         };
 
         me.updateStore();
-        // console.log('信息',img, img.width, img.height, me.store.imgWidth, me.store.imgHeight,  me.store.width, me.store.height,me.store.imgScale, me.store.rotateAngle)
-        transformFn(ctx, img, 0, 0, me.store.width, me.store.height, 0, 0, me.store.width,  me.store.height, me.store.imgScale, me.store.rotateAngle, saveAsImage);
+        me.store.imgToCanvasX = me.store.trimmingBoxleft - me.store.imgLeft * currentScaleNum;
+        me.store.imgToCanvasY = me.store.trimmingBoxTop - me.store.imgTop * currentScaleNum;
+        console.log('检图片边缘---位置=>', me.store.imgToCanvasX, me.store.imgToCanvasY, me.store.trimmingBoxleft,me.store.trimmingBoxTop, me.store.imgLeft, me.store.imgTop, currentScaleNum);
+        transformFn(ctx, img, me.store.imgToCanvasX, me.store.imgToCanvasY, me.store.width, me.store.height, 0, 0, me.store.width,  me.store.height, me.store.imgScale, me.store.rotateAngle, saveAsImage);
     };
 };
