@@ -470,7 +470,7 @@ class ImgEditor {
             // 图片缩放
             imgScale: 1,
             // 图片的宽高
-            imgWidth: 0,
+            imgHeightimgWidth: 0,
             imgHeight: 0,
             // 图片旋转角度
             rotateAngle: 0,
@@ -498,6 +498,11 @@ class ImgEditor {
             // 用于绘制在canvas上的img的对应的起始点坐标X\Y
             imgToCanvasX: 0,
             imgToCanvasY: 0,
+            // 用于canvas映射到剪裁时候到真实比例
+            mapRealCutProportion: 1,
+            // 剪裁缩放后到X、Y差值
+            mapRealCutProportionXDif: 0,
+            mapRealCutProportionYDif: 0,
         };
         console.log('options:', this.options);
         // 基础工具
@@ -1121,6 +1126,7 @@ class ImgEditor {
                 else {
                     me.store.imgScale = resSacle;
                 };
+                me.store.mapRealCutProportion = me.store.imgOriginScaleNum * me.store.imgScale;
                 var currentTransform = me.base.getEleById('_editor-img').style.transform;
                 var reg = /(\s|^)scale\((\d*\.?\d*)\)(\s|$)/g;
                 if (reg.test(currentTransform)) {
@@ -1194,6 +1200,7 @@ class ImgEditor {
             setCenterFn(function () { 
                 me.base.getEleById('_editor-img').style.transform = `translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale})`;
                 me.detectionImgScale('init');
+                me.detectionImgPos();
             });
         }
         else if (type && type === 'center') {
@@ -1246,6 +1253,7 @@ class ImgEditor {
         // 更新数据
         me.store.imgLeft = left - me.store.imgWidth / 2;
         me.store.imgTop = top - me.store.imgHeight / 2;
+        console.log('ok====>', me.store.imgLeft, me.store.imgTop, me.store.trimmingBoxleft, me.store.trimmingBoxTop, me.store.imgToCanvasX, me.store.imgToCanvasY)
         me.base.getEleById('_editor-img').style.transform = `translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale}) rotate(${me.store.rotateAngle}deg)`;
     };
     // 检图片边缘---缩放
@@ -1263,6 +1271,7 @@ class ImgEditor {
             scale = Math.max(scale, this.store.height / imgHeight);
         };
         me.store.imgScale = scale;
+        me.store.mapRealCutProportion = me.store.imgOriginScaleNum * me.store.imgScale;
         var currentTransform = me.base.getEleById('_editor-img').style.transform;
         var reg = /(\s|^)scale\((\d*\.?\d*)\)(\s|$)/g;
         if (reg.test(currentTransform)) {
@@ -1272,8 +1281,8 @@ class ImgEditor {
         me.base.getEleById('_editor-img').style.transform = currentTransform;
         // 将首次初始化好的图片存起来一份
         if (init && !me.store.initImgEle) {
-        let cloneToStoreImg = me.base.getEleById('_editor-img').cloneNode(true);
-        me.store.initImgEle = cloneToStoreImg;
+            let cloneToStoreImg = me.base.getEleById('_editor-img').cloneNode(true);
+            me.store.initImgEle = cloneToStoreImg;
         };
     };
     // 更新store中的数据
@@ -1331,6 +1340,7 @@ class ImgEditor {
          */
         let currentScaleNum = me.store.imgScale * me.store.imgOriginScaleNum;
         var transformFn = async function (ctx, img, imgx, imgy, imgwidth, imgheight, dx, dy, dwidth, dheight, scale, rotate, callback) {
+            currentScaleNum = scale * me.store.imgOriginScaleNum;
             imgwidth = imgwidth / currentScaleNum;
             imgheight = imgheight / currentScaleNum;
             // 切换画布中心点->旋转画布->切回画布原来中心点// 此时画布已经旋转过
@@ -1368,8 +1378,10 @@ class ImgEditor {
             };
         };
         me.updateStore();
-        me.store.imgToCanvasX = me.store.trimmingBoxleft - me.store.imgLeft;
-        me.store.imgToCanvasY = me.store.trimmingBoxTop - me.store.imgTop;
+        me.store.mapRealCutProportionXDif = me.store.initImgEleWidth * me.store.imgScale * (me.store.imgScale - 1);
+        me.store.mapRealCutProportionYDif = me.store.initImgEleHeight * me.store.imgScale * (me.store.imgScale - 1);
+        me.store.imgToCanvasX = (me.store.trimmingBoxleft - me.store.imgLeft) / me.store.mapRealCutProportion + me.store.mapRealCutProportionXDif / 2;
+        me.store.imgToCanvasY = (me.store.trimmingBoxTop - me.store.imgTop) / me.store.mapRealCutProportion + me.store.mapRealCutProportionYDif / 2;
         console.log('检图片边缘---位置=>', me.store.imgToCanvasX, me.store.imgToCanvasY, me.store.trimmingBoxleft,me.store.trimmingBoxTop, me.store.imgLeft, me.store.imgTop, currentScaleNum);
         transformFn(ctx, img, me.store.imgToCanvasX, me.store.imgToCanvasY, me.store.width, me.store.height, 0, 0, me.store.width,  me.store.height, me.store.imgScale, me.store.rotateAngle, saveAsImage);
     };
