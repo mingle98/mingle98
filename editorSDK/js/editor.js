@@ -503,6 +503,8 @@ class ImgEditor {
             // 剪裁缩放后到X、Y差值
             mapRealCutProportionXDif: 0,
             mapRealCutProportionYDif: 0,
+            // 是否处于旋转状态为正
+            rotateAngleStatus: false
         };
         console.log('options:', this.options);
         // 基础工具
@@ -696,6 +698,9 @@ class ImgEditor {
         var imgElem = this.base.getEleById('_editor-img');
         //  移动图片
         var ImgElemDownFn = function (e) {
+            if (!me.store.rotateAngleStatus) {
+                return false;
+            };
             // 当前鼠标位置
             if (!me.store.fingerEenter) return;
             me.store.imgMoveFinish = false;
@@ -735,6 +740,10 @@ class ImgEditor {
             // console.log('当前鼠标位置', e.changedTouches, me.store.imgmouseStartP)
         };
         var ImgElemMoveFn = function (e) {
+            if (!me.store.rotateAngleStatus) {
+                alert('旋转模式下暂不支持移动操作！');
+                return false;
+            };
             // 当前鼠标位置
             if (!me.store.fingerEenter ) return;
             if (me.store.imgMoveFinish ) return;
@@ -808,7 +817,10 @@ class ImgEditor {
                 me.updateImgChange('position');
             };
         };
-        var ImgElemUpFn = function (e) {console.log('ImgElemUpFn;', e)
+        var ImgElemUpFn = function (e) {
+            if (!me.store.rotateAngleStatus) {
+                return false;
+            };
             // 当前鼠标位置
             if (!me.store.fingerEenter ) return;
             me.store.imgMoveFinish = true;
@@ -837,6 +849,13 @@ class ImgEditor {
             me.setImgCenter('center');
             // 缩放复原
             me.updateImgChange('scale', 0);
+            // 特殊处理旋转情况  不允许移动操作
+            me.store.rotateAngleStatus = true;
+            if (!me.store.rotateAngleStatus && me.options.disableTouch) {
+                me.base.getEleById('_editor-2-arrowBox').style.opacity = '0';
+           } else if (me.store.rotateAngleStatus && me.options.disableTouch) {
+               me.base.getEleById('_editor-2-arrowBox').style.opacity = '1';
+           };
         };
         // 旋转
         var rotateFn = function () {
@@ -891,16 +910,16 @@ class ImgEditor {
             let step = Math.abs(options.disableTouchStepLen);
             switch (type) {
                 case 'top':
-                    me.updateImgChange('position', null, 'TB', - step);
+                    me.store.rotateAngleStatus && me.updateImgChange('position', null, 'TB', - step);
                     break;
                 case 'bottom':
-                    me.updateImgChange('position', null, 'TB', step);
+                    me.store.rotateAngleStatus && me.updateImgChange('position', null, 'TB', step);
                     break;
                 case 'left':
-                    me.updateImgChange('position', null, 'LR', - step);
+                    me.store.rotateAngleStatus && me.updateImgChange('position', null, 'LR', - step);
                     break;
                 case 'right':
-                    me.updateImgChange('position', null, 'LR', step);
+                    me.store.rotateAngleStatus && me.updateImgChange('position', null, 'LR', step);
                     break;
                 case 'big':
                     me.updateImgChange('scale', 1.25);
@@ -1070,6 +1089,7 @@ class ImgEditor {
         // 图片居中
         !me.base.getEleById('_editor-img').crossOrigin && (me.base.getEleById('_editor-img').crossOrigin = "Anonymous");
         me.setImgCenter();
+        me.store.rotateAngleStatus = true;
     };
     // 图片变化更新 方向
     updateImgChange(type, scaleNum, directionType, directionNum) {
@@ -1216,8 +1236,23 @@ class ImgEditor {
             }, 300);
         }
         else if (type && type === 'rotate') {
+            setCenterFn(function () { 
+                me.base.getEleById('_editor-img').style.transform = `translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale})`;
+                me.detectionImgPos();
+            });
             // 更新数据
             me.store.rotateAngle = me.store.rotateAngle + 90;
+            // 标记现在是旋转状态且不为正
+            me.store.rotateAngleStatus = false;
+            if (me.store.rotateAngle % 360 === 0) {
+                me.store.rotateAngleStatus = true;  
+            };
+            // 如果当前已经旋转为正了就支持移动操作，否者不支持移动，只支持缩放和旋转
+            if (!me.store.rotateAngleStatus && me.options.disableTouch) {
+                 me.base.getEleById('_editor-2-arrowBox').style.opacity = '0';
+            } else if (me.store.rotateAngleStatus && me.options.disableTouch) {
+                me.base.getEleById('_editor-2-arrowBox').style.opacity = '1';
+            };
             var currentTransform = me.base.getEleById('_editor-img').style.transform;
             var reg = /(\s|^)rotate\((\d*)deg\)(\s|$)/g;
             if (reg.test(currentTransform)) {
@@ -1327,10 +1362,11 @@ class ImgEditor {
     draw() {
         let me = this;
         var img = me.base.getEleById('_editor-img');
-        var canvas = me.base.getEleById('_canvas')
+        var canvas = me.base.getEleById('_canvas');
         canvas.width = me.store.width;
         canvas.height = me.store.height;
         var ctx = canvas.getContext("2d");
+        let currentScaleNum = me.store.imgScale * me.store.imgOriginScaleNum;
         // 形变函数
         /**
          * @param  ctx:  画布
@@ -1342,14 +1378,13 @@ class ImgEditor {
          * @param  scale     缩放比例
          * @param  rotate     旋转角度
          */
-        let currentScaleNum = me.store.imgScale * me.store.imgOriginScaleNum;
         var transformFn = async function (ctx, img, imgx, imgy, imgwidth, imgheight, dx, dy, dwidth, dheight, scale, rotate, callback) {
             currentScaleNum = scale * me.store.imgOriginScaleNum;
             imgwidth = imgwidth / currentScaleNum;
             imgheight = imgheight / currentScaleNum;
             // 切换画布中心点->旋转画布->切回画布原来中心点// 此时画布已经旋转过
-            let degrees =  rotate * Math.PI / 180;
             ctx.translate(dx + dwidth / 2, dy + dheight / 2);
+            let degrees =  rotate * Math.PI / 180;
             ctx.rotate(degrees);
             ctx.translate(-(dx + dwidth / 2), -(dy + dheight / 2));
             ctx.drawImage(img, imgx, imgy, imgwidth, imgheight, dx, dy, dwidth, dheight);
@@ -1362,7 +1397,7 @@ class ImgEditor {
         // 将canvas转化成图片 下载
         function saveAsImage() {
             try {
-                var image = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream"); 
+                var image = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
                 var a = document.createElement("a");
                 a.id = 'link';
                 document.body.appendChild(a);
