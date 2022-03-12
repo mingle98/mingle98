@@ -70,20 +70,36 @@
 
 
 #### 详细说明
-|  参数 |  值类型 | 说明  |   |
+    参数说明
+|  参数 |  值类型 | 说明  |  是否必须 |
 |---|---|---|---|
-| module |  string |  传入dialog表示弹层模式，否则嵌入模式 |   |
-|   |   |   |   |
+| module |  string |  传入dialog表示弹层模式，否则嵌入模式 |  是 |
+|  id |  string |  图片编辑器主体挂在的节点的id，仅嵌入模式下有效，可不传 | 否  |
+|  toolid |  string |  图片编辑工具bar挂在的节点的id，仅嵌入模式下有效，可不传 | 否  |
+|  editorW |  number |  自定义图片编辑器的宽(仅视口>460px时候该配置生效，最佳适配宽高比是2:3) | 否  |
+|  editorH |  number |  自定义图片编辑器的高(仅视口>460px时候该配置生效，最佳适配宽高比是2:3) | 否  |
+|  editorProportion |  number |  编辑器主体的width（视口宽<460px生效，默认0.9） | 否  |
+|  editorToolProportion |  number |  编辑器工具主体的width（视口宽<460px生效，默认0.9） | 否  |
+|  disableTouch |  boolean |  是否禁用手指拖动功能，默认true | 否  |
+|  editorWH |  number | 编辑器主体宽高比例（视口宽<460px生效，默认2/3适配最优） | 否  |
+|  disableTouchStepLen |  number | 禁用手指拖动功能时自定义步长 单位px，默认值30 | 否  |
+|  uploadImg |  string | 传入的图片url,现在暂时支持线上url | 是  |
 
 
 
+    api说明
+|  api |  说明  |  |   |
+|---|---|---|---|
+| onRender |  渲染组件时候触发的回调函数 |  |   |
+|  onInit | 初始化阶段触发的回调  |   |   |
+|  onScale | 缩放动作发生前触发的回调  |   |   |
+|  onRedo | 撤销动作发生前触发的回调  |   |   |
+|  onClickHook（e, element） |图片节点click事件事件时触发,可以获取当前事件节点和事件对象  |   |   |
+|  onMoveHook（e, element） |图片节点move事件时触发,可以获取当前事件节点和事件对象  |   |   |
+|  onEndHook（e, element） |图片节点结束接触时触发,可以获取当前事件节点和事件对象  |   |   |
 
 
 #### 特技
-
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+说明：该jssdk代码完全独创，未复制他人代码，学习使用，请勿用于其他用途！欢迎学习交流，作者信息如下：
+邮箱：2293188960@qq.com
+微信：![输入图片说明](editorSDK/img/WechatIMG3.jpeg)
