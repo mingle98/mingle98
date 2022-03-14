@@ -89,6 +89,8 @@
 |  editorToolProportion |  number |  编辑器工具主体的width（视口宽<460px生效，默认0.9） | 否  |
 |  editrBoxModel |  string |  自定义剪裁框尺寸，默认default，可以取值default、small、big | 否  |
 |  disableTouch |  boolean |  是否禁用手指拖动功能，默认true | 否  |
+|  imgMaxScale |  number |  允许缩放图片的最大值，默认3 | 否  |
+|  imgMinScale |  number |  允许缩放图片的最小值，默认0.5 | 否  |
 |  editorWH |  number | 编辑器主体宽高比例（视口宽<460px生效，默认2/3适配最优） | 否  |
 |  disableTouchStepLen |  number | 禁用手指拖动功能时自定义步长 单位px，默认值30 | 否  |
 |  uploadImg |  string | 传入的图片url,现在暂时支持线上url | 是  |
