@@ -996,6 +996,48 @@ class ImgEditor {
                 break;
         };
     };
+    // 检查端
+    mobilecheck() {
+        try {
+            var platform = navigator.platform || 'Win';
+            if (/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+                this.wapsetconfig();
+            }
+            // 如果是mac 在判断是否支持touchmove （ios13 ipad safari浏览器UA显示mac）以下三个条件都满足的就是UA有问题的ipad设备
+            else if (platform.indexOf('Mac') > -1
+                && ('ontouchend' in document)) {
+                this.wapsetconfig();
+            }
+            // 兼容支持触屏的pc电脑 （surface）
+            else if ('ontouchend' in document
+                && platform.indexOf('Win') === -1 && platform.indexOf('Mac') === -1) {
+                this.wapsetconfig();
+            }
+            else {
+                this.pcsetconfig();
+            }
+        }
+        catch (error) {
+            this.wapsetconfig();
+        }
+    };
+    // 移动端设置
+    wapsetconfig() {
+        this.devicetype = 'wap';
+        this.eventclick = 'touchstart';
+        this.eventmove = 'touchmove';
+        this.eventend = 'touchend';
+        this.eventend2 = 'touchcancel';
+        this.store.countnum = 10;
+    };
+    // pc端设置
+    pcsetconfig() {
+        this.devicetype = 'pc';
+        this.eventclick = 'mousedown';
+        this.eventmove = 'mousemove';
+        this.eventend = 'mouseup';
+        this.store.countnum = 20;
+    };
     // 初始化
     init() {
         // 触发hook
