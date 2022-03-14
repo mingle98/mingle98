@@ -65,7 +65,7 @@
 	<script>
 		 let options = {
 			// 弹窗模式或则嵌入模式
-			module: 'dialog',
+			module: 'dialog1',
 			// 主体编辑器容器id
 			id: 'editorBox',
 			// 编辑器工具容器id
@@ -79,6 +79,8 @@
 			// editorToolProportion: 0.6,
 			// 编辑器主体宽高比例（视口宽<460px生效，默认2/3）
 			editorWH: 2 / 3,
+			// 裁剪框尺寸模式 默认模式上default（小屏是设备尺寸的0.7)、小尺寸模式samll（小屏是设备尺寸的0.4）、大尺寸模式big（小屏是设备尺寸的0.9）
+			editrBoxModel: 'default',
 			// 是否禁用手指拖动功能
 			disableTouch: true,
 			// 禁用手指拖动功能时自定义步长 单位px
