@@ -5,6 +5,8 @@ window.mingleSDK.initImgEditor = function(options) {
     };
     !window.mingleSDK.imgEditorInstance && (window.mingleSDK.imgEditorInstance = new ImgEditor(options));
 };
+
+
 // 定义公共方法类
 class Base {
     constructor () {};
@@ -411,7 +413,7 @@ class Base {
 
 // 全局变量
 var $id_prefix = '$baidu_' + Math.floor(Math.random() * 1000000).toString().split(',');
-console.log('$id_prefix', $id_prefix);
+// console.log('$id_prefix', $id_prefix);
 
 // 图片编辑器类
 class ImgEditor {
@@ -429,11 +431,13 @@ class ImgEditor {
             toolContainerId: options.toolid,
             // 传入的图片
             uploadImg: options.uploadImg || '',
+            // 裁剪框尺寸模式 默认模式上default（0.7)、小尺寸模式samll（0.4）、大尺寸模式big（0.9）
+            editrBoxModel: options.editrBoxModel || 'default',
             // 是否禁用手指拖动功能
             disableTouch: options.disableTouch || false,
             // 禁用手指拖动功能时自定义步长 单位px
             disableTouchStepLen: options.disableTouchStepLen || 30,
-            // 图片的放大最大(小)比例
+            // 图片的放大最大(小)比例，最小默认值0.5，最大3
             imgMaxScale: options.imgMaxScale || 3,
             imgMinScale: options.imgMinScale || 0.5,
             onRender: options.onRender || function () {  },
@@ -680,14 +684,14 @@ class ImgEditor {
         var editorBoxEnterFn = function () {
             if (me.store.fingerEenter) return;
             me.store.fingerEenter = true;
-            console.log('fingerEenter:', me.store.fingerEenter);
+            // console.log('fingerEenter:', me.store.fingerEenter);
         };
         var editorBoxLeaveFn = function () { 
             me.store.fingerEenter = false;
             // 关闭图片操作行为
             me.store.imgMoveFinish = true;
             me.store.imgMoveStart = false;
-            console.log('fingerEenter:', me.store.fingerEenter);
+            // console.log('fingerEenter:', me.store.fingerEenter);
         };
         this.base.addEventHandler(editorBox, 'mouseenter', editorBoxEnterFn);
         this.base.addEventHandler(editorBox, 'mouseleave', editorBoxLeaveFn);
@@ -718,7 +722,7 @@ class ImgEditor {
                     x: parseInt(etype[1].clientX, 10),
                     y: parseInt(etype[1].clientY, 10)
                 }
-                console.log(' 移动端  两指start:', etype);
+                // console.log(' 移动端  两指start:', etype);
                 me.store.imgmouseStartP.push(finger1, finger2);
             }
             else if (e.changedTouches && e.changedTouches.length === 1) {// 移动端  单指
@@ -727,14 +731,14 @@ class ImgEditor {
                     y: parseInt(etype[0].clientY, 10)
                 };
                 me.store.imgmouseStartP[0] = finger1;
-                console.log('移动端  单指start:', me.store.imgmouseStartP[0]);
+                // console.log('移动端  单指start:', me.store.imgmouseStartP[0]);
             }
             else {// pc
                 var finger1 = {
                     x: parseInt(etype.clientX, 10),
                     y: parseInt(etype.clientY, 10)
                 };
-                console.log('pc 单指start:', finger1);
+                // console.log('pc 单指start:', finger1);
                 me.store.imgmouseStartP[0] = finger1;
             };
             // console.log('当前鼠标位置', e.changedTouches, me.store.imgmouseStartP)
@@ -760,7 +764,7 @@ class ImgEditor {
                     x: parseInt(etype[1].clientX, 10),
                     y: parseInt(etype[1].clientY, 10)
                 }
-                console.log(' 移动端  两指move:', etype);
+                // console.log(' 移动端  两指move:', etype);
                 me.store.imgmouseMoveP.push(finger1, finger2);
             }
             else if (e.changedTouches && e.changedTouches.length === 1) { // 移动端  单指
@@ -768,7 +772,7 @@ class ImgEditor {
                     x: parseInt(etype[0].clientX, 10),
                     y: parseInt(etype[0].clientY, 10)
                 };
-                console.log('移动端  单指move:', finger1);
+                // console.log('移动端  单指move:', finger1);
                 me.store.imgmouseMoveP[0] = (finger1);
             }
             else {// pc 单指
@@ -776,7 +780,7 @@ class ImgEditor {
                     x: parseInt(etype.clientX, 10),
                     y: parseInt(etype.clientY, 10)
                 };
-                console.log('pc 单指move:', finger1);
+                // console.log('pc 单指move:', finger1);
                 me.store.imgmouseMoveP[0] = finger1;
             };
             // me.store.imgmouseMoveP = {x: parseInt(etype.clientX, 10), y: parseInt(etype.clientY, 10)};
@@ -796,7 +800,7 @@ class ImgEditor {
                 // 缩放比例
                 var scaleNum = hypotenuse2 / hypotenuse1;
                 me.updateImgChange('scale', scaleNum);
-                console.log('移动端 两个手指缩放：',  me.store.imgmouseStartP, imgmouseMoveP);
+                // console.log('移动端 两个手指缩放：',  me.store.imgmouseStartP, imgmouseMoveP);
             }
             else {// pc/移动 单指移动
                 // 计算平移的XY
@@ -806,7 +810,7 @@ class ImgEditor {
                     x: imgmouseMoveP['x'] - imgmouseStartP['x'],
                     y: imgmouseMoveP['y'] - imgmouseStartP['y']
                 };
-                console.log('pc/移动端 单指移动：', imgmouseStartP, imgmouseMoveP, me.store.imgTransForXY);
+                // console.log('pc/移动端 单指移动：', imgmouseStartP, imgmouseMoveP, me.store.imgTransForXY);
                 // 让图片移动
                 if (Math.abs(me.store.imgTransForXY.x) < 10) {
                     me.store.imgTransForXY.x < 0 ? me.store.imgTransForXY.x = - 10 : me.store.imgTransForXY.x =  10;
@@ -1069,7 +1073,19 @@ class ImgEditor {
             this.store.minheight = this.options.editorW * 0.4 || this.store.defaultHeight * 0.9;
             this.store.maxheight = this.options.editorW * 0.9 || this.store.defaultHeight * 1.1;
         };
-        console.log('initData:', this.store);
+        // console.log('initData:', this.store);
+        switch(this.options.editrBoxModel) {
+            case 'small':
+                this.store.width =  this.store.minwidth;
+                this.store.height = this.store.minheight;
+                break;
+            case 'big':
+                this.store.width =  this.store.maxwidth;
+                this.store.height = this.store.maxheight;
+                break;
+            default:
+                break;
+        }
         this.initSize();
     };
     // 初始化尺寸
@@ -1467,4 +1483,25 @@ class ImgEditor {
                                 + me.store.mapRealCutProportionYDif * 0.5 / currentScaleNum;
         transformFn(ctx, img, me.store.imgToCanvasX, me.store.imgToCanvasY, me.store.width, me.store.height, 0, 0, me.store.width,  me.store.height, me.store.imgScale, me.store.rotateAngle, saveAsImage);
     };
+};
+
+//  根据ua判断平台学习
+var browser={
+    versions:function(){
+            var u = navigator.userAgent,
+            app = navigator.appVersion;
+            return {         //移动终端浏览器版本信息
+                 trident: u.indexOf('Trident') > -1, //IE内核
+                presto: u.indexOf('Presto') > -1, //opera内核
+                webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
+                gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
+                mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
+                ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
+                android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或uc浏览器
+                iPhone: u.indexOf('iPhone') > -1 , //是否为iPhone或者QQHD浏览器
+                iPad: u.indexOf('iPad') > -1, //是否iPad
+                webApp: u.indexOf('Safari') == -1 //是否web应该程序，没有头部与底部
+            };
+    }(),
+    language:(navigator.browserLanguage || navigator.language).toLowerCase()
 };
