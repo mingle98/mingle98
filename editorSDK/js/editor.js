@@ -1028,7 +1028,6 @@ class ImgEditor {
         this.eventmove = 'touchmove';
         this.eventend = 'touchend';
         this.eventend2 = 'touchcancel';
-        this.store.countnum = 10;
     };
     // pc端设置
     pcsetconfig() {
@@ -1036,12 +1035,13 @@ class ImgEditor {
         this.eventclick = 'mousedown';
         this.eventmove = 'mousemove';
         this.eventend = 'mouseup';
-        this.store.countnum = 20;
     };
     // 初始化
     init() {
         // 触发hook
         this.options.onInit();
+        // 检查端
+        this.mobilecheck();
         // 初始化数据
         this.initData();
         // 初始化尺寸
