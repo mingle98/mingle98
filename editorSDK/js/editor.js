@@ -525,7 +525,13 @@ class ImgEditor {
             // 是否处于旋转状态为正
             rotateAngleStatus: false,
             // 使用的滤镜
-            imgFilter: 'none'
+            imgFilter: {
+                style: '',
+                bwNum: 0,
+                ltNum: 0,
+                mkType: '',
+                mkTypeNum: ''
+            }
         };
         console.log('options:', this.options);
         // 基础工具
@@ -541,7 +547,9 @@ class ImgEditor {
                     confirm: 'confirm',
                     reset: 'undo',
                     rotate: 'rotating',
-                }
+                },
+                downloadSuc: 'download successful',
+                downloadFail: 'download failed'
             },
             Zh: {
                 headTitle: '',
@@ -550,11 +558,24 @@ class ImgEditor {
                     confirm: '选好了',
                     reset: '撤销',
                     rotate: '旋转',
-                }
+                },
+                downloadSuc: '下载成功！',
+                downloadFail: '下载失败'
             }
         } [langquery];
         // 是否采用滤镜
-        this.base.getQueryString('filter') && (this.store.imgFilter = this.base.getQueryString('filter'));
+        if (this.base.getQueryString('filter')) {
+            this.store.imgFilter.style = this.base.getQueryString('filter') || '';
+            let bwNum = this.base.getQueryString('bwNum');
+            let ltNum = this.base.getQueryString('ltNum');
+            let mkType = this.base.getQueryString('mkType');
+            let mkTypeNum = this.base.getQueryString('mkTypeNum');
+            bwNum && (this.store.imgFilter.bwNum = bwNum || 0);
+            ltNum && (this.store.imgFilter.ltNum = ltNum || 0);
+            mkType && (this.store.imgFilter.mkType = mkType || '');
+            mkTypeNum && (this.store.imgFilter.mkTypeNum = mkTypeNum || '');
+        };
+        console.log('query:', this.base.getQueryString('filter'), this.store.imgFilter);
         // 渲染页面
         this.render();
         let me = this;
@@ -573,6 +594,7 @@ class ImgEditor {
     };
     // 存模版的方法
     get_tpl(file) {
+        let me = this;
         var editorBodyTpl = '<div class="editor-body" id="' + $id_prefix+ '_editor-body">' +
                                 '<img class="editor-img" src="' + this.options.uploadImg + '" alt="" id="' + $id_prefix+ '_editor-img">' +
                                 '<div class="editor-content">' +
@@ -616,25 +638,25 @@ class ImgEditor {
                                     '<p class="toolBar-item-icon-box">' +
                                         '<span class="toolBar-item-icon reselect-icon"></span>' +
                                     '</p>' +
-                                    '<span class="toolBar-item-text">重选</span>' +
+                                    '<span class="toolBar-item-text">' + me.lang.tools.reSelect + '</span>' +
                                 '</div>' +
                                 '<div class="toolbar-item" id="' + $id_prefix + '_tool-redo">' +
                                     '<p class="toolBar-item-icon-box ">' +
                                         '<span class="toolBar-item-icon chexiao-icon"></span>'+
                                     '</p>' +
-                                    '<span class="toolBar-item-text">撤销</span>' +
+                                    '<span class="toolBar-item-text">' + me.lang.tools.reset + '</span>' +
                                 '</div>' +
                                 '<div class="toolbar-item" id="' + $id_prefix + '_tool-rotate">' +
                                     '<p class="toolBar-item-icon-box">' +
                                         '<span class="toolBar-item-icon xuanzhuan-icon"></span>' +
                                     '</p>' +
-                                    '<span class="toolBar-item-text">旋转</span>' +
+                                    '<span class="toolBar-item-text">' + me.lang.tools.rotate + '</span>' +
                                 '</div>' +
                                 '<div class="toolbar-item" id="' + $id_prefix + '_tool-ok">' +
                                     '<p class="toolBar-item-icon-box">' +
                                         '<span class="toolBar-item-icon ok-icon"></span>' +
                                     '</p>' +
-                                    '<span class="toolBar-item-text">选好了</span>' +
+                                    '<span class="toolBar-item-text">' + me.lang.tools.confirm + '</span>' +
                                 '</div>' +
                             '</div>';
         var tempObj = {
@@ -1488,6 +1510,86 @@ class ImgEditor {
             ctx.rotate(degrees);
             ctx.translate(-(dx + dwidth / 2), -(dy + dheight / 2));
             ctx.drawImage(img, imgx, imgy, imgwidth, imgheight, dx, dy, dwidth, dheight);
+            let _ctx = ctx;
+            var imgData = _ctx.getImageData(dx, dy, dwidth, dheight);
+            var data = imgData.data;//每个像素的data是个数组（红，绿，蓝，透明度）
+            switch (me.store.imgFilter.style) {
+                case 'rv':
+                    // 反转滤镜
+                    //遍历每个像素
+                    for (var i = 0; i < data.length; i += 4) {
+                        data[i + 0] = 255 - data[i + 0];
+                        data[i + 1] = 255 - data[i + 1];
+                        data[i + 2] = 255 - data[i + 2];
+                        //这里只反转颜色，不管透明度
+                    };
+                    break;
+                case "bw":
+                    // 黑白滤镜
+                    for (var i = 0; i < data.length; i += 4) {
+                        let bwNum = +me.store.imgFilter.bwNum;
+                        let average = (data[i + 0] + data[i + 1] + data[i + 2] + data[i + 3]) / 3 + bwNum;
+                        data[i + 0] = average;   //红
+                        data[i + 1] = average;   //绿
+                        data[i + 2] = average;   //蓝
+                    }
+                    break;
+                case 'lt':
+                    // 调整亮度滤镜
+                    // let ltNum = +me.store.imgFilter.ltNum > 255 ? 255 : +me.store.imgFilter.ltNum < 0 ? 0 : +me.store.imgFilter.ltNum;
+                    let ltNum = +me.store.imgFilter.ltNum;
+                    for (var i = 0; i < data.length; i += 4) {
+                        data[i + 0] += ltNum;
+                        data[i + 1] += ltNum;
+                        data[i + 2] += ltNum;
+                    };
+                    break;
+                case 'mk':
+                    // 蒙层滤镜
+                    let mkType = me.store.imgFilter.mkType;
+                    let mkTypeNum = me.store.imgFilter.mkTypeNum;
+                    let ljf_type,
+                        ljf_num;
+                    if (mkTypeNum && mkTypeNum.indexOf('_') !== -1) {
+                        ljf_type = mkTypeNum.split('_')[0];
+                        ljf_num = isNaN(mkTypeNum.split('_')[1]) ? 0 : +mkTypeNum.split('_')[1];
+                    };
+                    for (var i = 0; i < data.length; i += 4) {
+                        var r = data[i + 0];
+                        var g = data[i + 1];
+                        var b = data[i + 2];
+                        var average = (r + g + b) / 3;
+                        if (mkType === 'red') {
+                            data[i + 1] = 0;
+                            data[i + 2] = 0;
+                            data[i + 0] = average;
+                        } else if (mkType === 'green') {
+                            data[i + 1] = average;
+                            data[i + 0] = 0;
+                            data[i + 2] = 0;
+                        } else if (mkType === 'blue') {
+                            data[i + 2] = average;
+                            data[i + 0] = 0;
+                            data[i + 1] = 0;
+                        } else {
+                            data[i + 2] = 0;
+                            data[i + 0] = average;
+                            data[i + 1] = 0;
+                        }
+                        if (ljf_type === 'r' ) {
+                            data[i + 0] += ljf_num;
+                        } else if(ljf_type === 'g') {
+                            data[i + 1] += ljf_num;
+                        } else if (ljf_type === 'b') {
+                            data[i + 2] += ljf_num;
+                        };
+                    };
+                    break;
+                default:
+                    break;
+            };
+            //在指定位置输出图片
+            _ctx.putImageData(imgData, 0, 0, dx, dy, dwidth, dheight);
             me.base.getEleById('_loading-box').style.display = 'block';
             await me.base.sleep();
             me.base.getEleById('_canvas-box').style.display = 'block';
@@ -1506,11 +1608,11 @@ class ImgEditor {
                 link.setAttribute('href', image);
                 link.click();
                 document.body.removeChild(link);
-                me.base.getEleById('_download-tip').innerText = '下载成功!';
+                me.base.getEleById('_download-tip').innerText = me.lang.downloadSuc;
                 me.base.getEleById('_download-tip').style = 'color: green;';
                 me.base.getEleById('_download-tip').style.display = 'block';
             } catch (error) {
-                me.base.getEleById('_download-tip').innerText = '下载失败!';
+                me.base.getEleById('_download-tip').innerText = me.lang.downloadFail;
                 me.base.getEleById('_download-tip').style = 'color: red;'
                 me.base.toggleShow(me.base.getEleById('_download-tip'));
                 me.base.getEleById('_download-tip').style.display = 'block';
