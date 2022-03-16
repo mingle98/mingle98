@@ -407,7 +407,22 @@ class Base {
             })
         };
         await fn();
-    }
+    };
+    // 19.封装获取query参数的方法
+    getQueryString(name) {
+        var locationArray = location.href.substring(location.href.indexOf("?") + 1).split("&");
+        var locationObj = {};
+        for (var i = 0,
+            len = locationArray.length; i < len; i++) {
+            var tempArray = locationArray[i].split("=");
+            locationObj[tempArray[0]] = tempArray[1]
+        }
+        if (name && name !== 0 && name !== false) {
+            return locationObj[name] ? locationObj[name] : ""
+        } else {
+            return locationObj
+        }
+    };
 };
 
 
