@@ -523,11 +523,38 @@ class ImgEditor {
             mapRealCutProportionXDif: 0,
             mapRealCutProportionYDif: 0,
             // 是否处于旋转状态为正
-            rotateAngleStatus: false
+            rotateAngleStatus: false,
+            // 使用的滤镜
+            imgFilter: 'none'
         };
         console.log('options:', this.options);
         // 基础工具
         this.base = new Base();
+        // 语言文案
+        let langquery = this.base.getQueryString('lang') || 'Zh';
+        this.lang = {
+            En: {
+                headTitle: '',
+                headTitle: '',
+                tools: {
+                    reSelect: 'reelect',
+                    confirm: 'confirm',
+                    reset: 'undo',
+                    rotate: 'rotating',
+                }
+            },
+            Zh: {
+                headTitle: '',
+                tools: {
+                    reSelect: '重选',
+                    confirm: '选好了',
+                    reset: '撤销',
+                    rotate: '旋转',
+                }
+            }
+        } [langquery];
+        // 是否采用滤镜
+        this.base.getQueryString('filter') && (this.store.imgFilter = this.base.getQueryString('filter'));
         // 渲染页面
         this.render();
         let me = this;
