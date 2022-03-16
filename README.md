@@ -83,7 +83,7 @@
 
 
 #### 详细说明
-    参数说明
+    optios参数说明
 |  参数 |  值类型 | 说明  |  是否必须 |
 |---|---|---|---|
 | module |  string |  传入dialog表示弹层模式，否则嵌入模式 |  是 |
@@ -101,7 +101,19 @@
 |  disableTouchStepLen |  number | 禁用手指拖动功能时自定义步长 单位px，默认值30 | 否  |
 |  uploadImg |  string | 传入的图片url,现在暂时支持线上url | 是  |
 
+    query参数说明
+|  参数 |  值类型 | 说明  |  是否必须 |
+|---|---|---|---|
+| lang |  string |  语言默认中文（Zh），可以配置英文（En） |  否 |
+|  filter |  string |  对编辑后对图片使用滤镜，可以值如下列表 | 否  |
 
+    filter滤镜参数值
+|  值 |  说明  |  是否必须 |
+|---|---|---|---|
+| rv | 图片颜色反转 |  否 |
+|  bw | 黑白,可以在query参数中传bwNum参数调整黑白程度，只为number类型 ，例如bwNum=100或bwNum=-100 | 否  |
+|  lt | 调节图片亮暗，可以在query参数中传ltNum参数调整亮度，只为number类型，例如ltNum=100或ltNum=-100  | 否  |
+| mk | 蒙版， 可以在query参数中传mkType参数决定主色系，只为string类型（值可以是‘r’、‘g’、’b‘），例如mkType='r';可以在query参数中传mkTypeNum参数调整rgb色值，只为string类型（值格式：‘色系_调整值’），例如mkTypeNum=‘r_100’或mkTypeNum=‘r_-100’; | 否  |
 
     api说明
 |  api |  说明  |  |   |
