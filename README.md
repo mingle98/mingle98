@@ -9,7 +9,7 @@
 
 #### 软件架构
 
-![输入图片说明](editorSDK/img/%E6%88%AA%E5%B1%8F2022-03-16%20%E4%B8%8B%E5%8D%8812.25.19.png)
+![输入图片说明](editorSDK/img/1.drawio.png)
 
 
 #### 安装教程
