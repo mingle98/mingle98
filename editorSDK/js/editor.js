@@ -527,6 +527,11 @@ class ImgEditor {
                 ltNum: 0,
                 mkType: '',
                 mkTypeNum: ''
+            },
+            // 是否配置query的编辑框尺寸参数
+            editorbox: {
+                value: 1,
+                open: false
             }
         };
         console.log('options:', this.options);
@@ -547,7 +552,8 @@ class ImgEditor {
                 downloadSuc: 'download successful',
                 downloadFail: 'download failed',
                 downloadBtn: 'download',
-                downloadBtned: 'Downloaded'
+                downloadBtned: 'Downloaded',
+                ieV: 'The current browser version is too early. Upgrade the browser to the latest version'
             },
             Zh: {
                 headTitle: '',
@@ -560,9 +566,16 @@ class ImgEditor {
                 downloadSuc: '下载成功！',
                 downloadFail: '下载失败',
                 downloadBtn: '下载',
-                downloadBtned: '已下载'
+                downloadBtned: '已下载',
+                ieV: '当前浏览器版本过低，请升级至最新版本！'
             }
         } [langquery];
+        // 检测浏览器
+        let iev = this.base.IEVersion();
+        if (!isNaN(iev) && iev <= 7 && iev !== -1) {
+            alert(this.lang.ieV);
+            return false;
+        };
         // 是否采用滤镜
         if (this.base.getQueryString('filter')) {
             this.store.imgFilter.style = this.base.getQueryString('filter') || '';
@@ -575,7 +588,13 @@ class ImgEditor {
             mkType && (this.store.imgFilter.mkType = mkType || '');
             mkTypeNum && (this.store.imgFilter.mkTypeNum = mkTypeNum || '');
         };
-        console.log('query:', this.base.getQueryString('filter'), this.store.imgFilter);
+        // console.log('query:', this.base.getQueryString('filter'), this.store.imgFilter);
+        // 是否在query上配置裁剪框尺寸配置 比例
+        if (this.base.getQueryString('editorbox') && !isNaN(this.base.getQueryString('editorbox'))) {
+            this.store.editorbox.value = Math.abs(this.base.getQueryString('editorbox')) || 1;
+            this.store.editorbox.open = true;
+            console.log('裁剪框尺寸配置:', this.store.editorbox.value);
+        };
         // 渲染页面
         this.render();
         let me = this;
@@ -591,6 +610,17 @@ class ImgEditor {
         // 触发hook
         this.options.onRender();
         this.renderTpl();
+    };
+    // 初始化
+    init() {
+        // 触发hook
+        this.options.onInit();
+        // 检查端
+        this.mobilecheck();
+        // 初始化数据
+        this.initData();
+        // 初始化尺寸
+        this.initSize();
     };
     // 存模版的方法
     get_tpl(file) {
@@ -1117,17 +1147,6 @@ class ImgEditor {
         this.eventmove = 'mousemove';
         this.eventend = 'mouseup';
     };
-    // 初始化
-    init() {
-        // 触发hook
-        this.options.onInit();
-        // 检查端
-        this.mobilecheck();
-        // 初始化数据
-        this.initData();
-        // 初始化尺寸
-        this.initSize();
-    };
     initData() {
         // 获取设备宽高
         var {w, h} = this.base.getSViewportOffset();
@@ -1151,19 +1170,49 @@ class ImgEditor {
             this.store.maxheight = this.options.editorW * 0.9 || this.store.defaultHeight * 1.1;
         };
         // console.log('initData:', this.store);
-        switch(this.options.editrBoxModel) {
+        this.setImgBoxWH();
+        this.initSize();
+    };
+    // 处理裁剪框尺寸
+    setImgBoxWH() {
+        let me = this;
+        let useSize = me.store.editorbox.value;
+        let open = me.store.editorbox.open;
+        switch(me.options.editrBoxModel) {
             case 'small':
-                this.store.width =  this.store.minwidth;
-                this.store.height = this.store.minheight;
+                me.store.width =  me.store.minwidth;
+                me.store.height = me.store.minheight;
+                if (open && useSize >= 1) {
+                    let width = me.store.width * useSize > me.store.maxwidth ? me.store.maxwidth : me.store.width * useSize;
+                    let height = me.store.height * useSize > me.store.maxheight ? me.store.maxheight : me.store.height * useSize;
+                    me.store.width =  width;
+                    me.store.height = height;
+                };
                 break;
             case 'big':
-                this.store.width =  this.store.maxwidth;
-                this.store.height = this.store.maxheight;
+                me.store.width =  me.store.maxwidth;
+                me.store.height = me.store.maxheight;
+                if (open && useSize < 1 && useSize > 0) {
+                    let width = me.store.width * useSize < me.store.minwidth ? me.store.minwidth : me.store.width * useSize;
+                    let height = me.store.height * useSize < me.store.minheight ? me.store.minheight : me.store.height * useSize;
+                    me.store.width =  width;
+                    me.store.height = height;
+                };
                 break;
             default:
+                if (open && useSize < 1 && useSize > 0) {
+                    let width = me.store.width * useSize < me.store.minwidth ? me.store.minwidth : me.store.width * useSize;
+                    let height = me.store.height * useSize < me.store.minheight ? me.store.minheight : me.store.height * useSize;
+                    me.store.width =  width;
+                    me.store.height = height;
+                } else if (open && useSize >= 1) {
+                    let width = me.store.width * useSize > me.store.maxwidth ? me.store.maxwidth : me.store.width * useSize;
+                    let height = me.store.height * useSize > me.store.maxheight ? me.store.maxheight : me.store.height * useSize;
+                    me.store.width =  width;
+                    me.store.height = height;
+                };
                 break;
-        }
-        this.initSize();
+        };
     };
     // 初始化尺寸
     initSize() {
@@ -1352,8 +1401,9 @@ class ImgEditor {
             };
         };
         if (!type) {
-            setCenterFn(function () { 
+            setCenterFn(async function () { 
                 me.base.getEleById('_editor-img').style.transform = `translate3d(${me.store.imgLeft}px, ${me.store.imgTop}px, 0) scale(${me.store.imgScale})`;
+                await me.base.sleep(1000);
                 me.detectionImgScale('init');
                 me.detectionImgPos();
             });
@@ -1380,7 +1430,7 @@ class ImgEditor {
             // 标记现在是旋转状态且不为正
             me.store.rotateAngleStatus = false;
             if (me.store.rotateAngle % 360 === 0) {
-                me.store.rotateAngleStatus = true;  
+                me.store.rotateAngleStatus = true;
             };
             // 如果当前已经旋转为正了就支持移动操作，否者不支持移动，只支持缩放和旋转
             if (!me.store.rotateAngleStatus && me.options.disableTouch) {
@@ -1480,7 +1530,6 @@ class ImgEditor {
         switch (type) {
             case 'imgTransLT':
                 var currentImgTransform = me.base.getEleById('_editor-img').style.transform;
-                
                 break;
             case 'test':
                 break;
@@ -1488,11 +1537,9 @@ class ImgEditor {
                 console.log('getCorrespondVal err');
                 break;
         }
-    }
-    // 裁剪框
-    updateEditorBoxChange() {
-
     };
+    // 裁剪框
+    updateEditorBoxChange() {};
     // canvas绘制
     draw() {
         let me = this;
@@ -1648,5 +1695,4 @@ class ImgEditor {
         };
     };
 };
-
 })(window);
