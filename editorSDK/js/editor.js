@@ -1,3 +1,4 @@
+(function (window) {
 window.mingleSDK = window.mingleSDK ? window.mingleSDK : {};
 window.mingleSDK.initImgEditor = function(options) {
     if (window.mingleSDK.imgEditorInstance) {
@@ -5,8 +6,6 @@ window.mingleSDK.initImgEditor = function(options) {
     };
     !window.mingleSDK.imgEditorInstance && (window.mingleSDK.imgEditorInstance = new ImgEditor(options));
 };
-
-
 // 定义公共方法类
 class Base {
     constructor () {};
@@ -202,20 +201,16 @@ class Base {
         };
         return this;
     };
-    removeClass(ele, cName) {
-        var reg = new RegExp('(\\s|^)' + cName + '(\\s|$)');
-        if (this.hasClassName(ele, cName)) {
-            // 第一种情况 classname前后有空格
-            if (ele.className.indexOf(' ' + cName + ' ') >= 0) {
-                ele.className.replace(reg, ' ');
-            }
-            else {
-                // 其他情况
-                ele.className.replace(reg, '');
-            }
-        };
+    removeClass(dom, cName) {
+        if (this.hasClassName(dom, cName)) {
+            if (dom.className.indexOf(' ' + cName + ' ') >= 0) {
+                dom.className = dom.className.replace(new RegExp('(\\s|^)' + cName + '(\\s|$)'), ' ');
+            } else {
+                dom.className = dom.className.replace(new RegExp('(\\s|^)' + cName + '(\\s|$)'), '');
+            };
+        }
         return this;
-    };
+    }
     // 8.阻止默认事件（冒泡或则a标签等)
     stopPropagation(e) {
         if (e.stopPropagation) {
@@ -429,6 +424,7 @@ class Base {
 // 全局变量
 var $id_prefix = '$baidu_' + Math.floor(Math.random() * 1000000).toString().split(',');
 // console.log('$id_prefix', $id_prefix);
+let downloadFlag = false;
 
 // 图片编辑器类
 class ImgEditor {
@@ -549,7 +545,9 @@ class ImgEditor {
                     rotate: 'rotating',
                 },
                 downloadSuc: 'download successful',
-                downloadFail: 'download failed'
+                downloadFail: 'download failed',
+                downloadBtn: 'download',
+                downloadBtned: 'Downloaded'
             },
             Zh: {
                 headTitle: '',
@@ -560,7 +558,9 @@ class ImgEditor {
                     rotate: '旋转',
                 },
                 downloadSuc: '下载成功！',
-                downloadFail: '下载失败'
+                downloadFail: '下载失败',
+                downloadBtn: '下载',
+                downloadBtned: '已下载'
             }
         } [langquery];
         // 是否采用滤镜
@@ -621,6 +621,7 @@ class ImgEditor {
                                 '<div class="canvas-box" id="' + $id_prefix + '_canvas-box">' +
                                     '<div class="editor-back-arrow" id="' + $id_prefix + '_editor-back-arrow"></div>' +
                                     '<canvas class="canvas" id="' + $id_prefix + '_canvas"></canvas>' +
+                                    '<button class="download-button" id="' + $id_prefix + '_download-button">' + me.lang.downloadBtn +'</button>' +
                                     '<div class="download-tip" id="' + $id_prefix + '_download-tip"></div>' +
                                 '</div>' +
                                 '<div class="loading-box" id="' + $id_prefix + '_loading-box">' +
@@ -1010,7 +1011,19 @@ class ImgEditor {
         this.base.addEventHandler(this.base.getEleById('_editor-big-icon'), 'click', () => {arrowChangeOp('big');});
         this.base.addEventHandler(this.base.getEleById('_editor-small-icon'), 'click', () => {arrowChangeOp('small');});
         this.base.addEventHandler(this.base.getEleById('_editor-back-arrow'), 'click', () => {
+            let downloadButton = me.base.getEleById('_download-button');
+            let downloadTip = me.base.getEleById('_download-tip');
+            downloadButton.disabled = false;
+            me.base.removeClass(downloadButton, 'disabledCls');
+            downloadButton.innerText = me.lang.downloadBtn;
+            downloadTip.style.display = 'none';
             me.base.toggleShow(this.base.getEleById('_canvas-box'));
+            downloadFlag = false;
+        });
+
+        // 编辑后的图片下载按钮
+        this.base.addEventHandler(this.base.getEleById('_download-button'), 'click', () => {
+            this.saveAsImage();
         });
     };
     // 绑定事件函数库（保证兼容性）
@@ -1575,14 +1588,10 @@ class ImgEditor {
                             data[i + 2] = 0;
                             data[i + 0] = average;
                             data[i + 1] = 0;
-                        }
-                        if (ljf_type === 'r' ) {
-                            data[i + 0] += ljf_num;
-                        } else if(ljf_type === 'g') {
-                            data[i + 1] += ljf_num;
-                        } else if (ljf_type === 'b') {
-                            data[i + 2] += ljf_num;
                         };
+                        (ljf_type === 'r') && (data[i + 0] += ljf_num);
+                        (ljf_type === 'g') && (data[i + 1] += ljf_num);
+                        (ljf_type === 'b') && (data[i + 2] += ljf_num);
                     };
                     break;
                 default:
@@ -1594,29 +1603,7 @@ class ImgEditor {
             await me.base.sleep();
             me.base.getEleById('_canvas-box').style.display = 'block';
             me.base.getEleById('_loading-box').style.display = 'none';
-            callback();
-        };
-        // 将canvas转化成图片 下载
-        function saveAsImage() {
-            try {
-                var image = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-                var a = document.createElement("a");
-                a.id = 'link';
-                document.body.appendChild(a);
-                var link = document.getElementById('link');
-                link.setAttribute('download', Date.now() + '.png');
-                link.setAttribute('href', image);
-                link.click();
-                document.body.removeChild(link);
-                me.base.getEleById('_download-tip').innerText = me.lang.downloadSuc;
-                me.base.getEleById('_download-tip').style = 'color: green;';
-                me.base.getEleById('_download-tip').style.display = 'block';
-            } catch (error) {
-                me.base.getEleById('_download-tip').innerText = me.lang.downloadFail;
-                me.base.getEleById('_download-tip').style = 'color: red;'
-                me.base.toggleShow(me.base.getEleById('_download-tip'));
-                me.base.getEleById('_download-tip').style.display = 'block';
-            };
+            // callback();
         };
         me.updateStore();
         me.store.mapRealCutProportionXDif = me.store.initImgEleWidth * (me.store.imgScale - 1);
@@ -1625,6 +1612,41 @@ class ImgEditor {
                                 + me.store.mapRealCutProportionXDif * 0.5 / currentScaleNum;
         me.store.imgToCanvasY = (me.store.trimmingBoxTop - me.store.imgTop) / me.store.mapRealCutProportion
                                 + me.store.mapRealCutProportionYDif * 0.5 / currentScaleNum;
-        transformFn(ctx, img, me.store.imgToCanvasX, me.store.imgToCanvasY, me.store.width, me.store.height, 0, 0, me.store.width,  me.store.height, me.store.imgScale, me.store.rotateAngle, saveAsImage);
+        transformFn(ctx, img, me.store.imgToCanvasX, me.store.imgToCanvasY, me.store.width, me.store.height, 0, 0, me.store.width,  me.store.height, me.store.imgScale, me.store.rotateAngle);
+    };
+    // 将canvas转化成图片 下载
+    saveAsImage() {
+        if (downloadFlag) {
+            return false;
+        };
+        let me = this;
+        try {
+            var canvas = me.base.getEleById('_canvas');
+            var downloadTip =  me.base.getEleById('_download-tip');
+            var downloadBtn =  me.base.getEleById('_download-button');
+            var image = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+            var a = document.createElement("a");
+            a.id = 'link';
+            document.body.appendChild(a);
+            var link = document.getElementById('link');
+            link.setAttribute('download', Date.now() + '.png');
+            link.setAttribute('href', image);
+            link.click();
+            document.body.removeChild(link);
+            downloadTip.innerText = me.lang.downloadSuc;
+            downloadTip.style = 'color: green;';
+            downloadTip.style.display = 'block';
+            downloadFlag = true;
+            downloadBtn.disabled = 'true';
+            downloadBtn.innerText= me.lang.downloadBtned;
+            me.base.addClass(downloadBtn, 'disabledCls');
+        } catch (error) {
+            downloadTip.innerText = me.lang.downloadFail;
+            downloadTip.style = 'color: red;'
+            me.base.toggleShow(downloadTip);
+            downloadTip.style.display = 'block';
+        };
     };
 };
+
+})(window);
