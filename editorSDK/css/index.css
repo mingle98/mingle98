@@ -5,6 +5,10 @@
     list-style: none;
 }
 
+.hide {
+    display: none;
+}
+
 .editor-body {
     width: 400px;
     height: 600px;
@@ -291,8 +295,28 @@
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    bottom: 10%;
+    bottom: 5%;
     text-align: center;
+}
+
+.download-button {
+    color: white;
+    width: 180px;
+    height: 45px;
+    border-radius: 10px;
+    text-align: center;
+    line-height: 40px;
+    position: absolute;
+    font-size: 16px;
+    cursor: pointer;
+    left: 50%;
+    bottom: calc(5% + 40px);
+    transform: translateX(-50%);
+    background-color: rgb(63, 132, 247);
+}
+
+.disabledCls {
+    background-color: rgb(161, 161, 161);
 }
 
 .editor-dialog-mask {
@@ -364,5 +388,3 @@
         transform: translateX(-50%) rotate(360deg);
     }
 }
-
-
