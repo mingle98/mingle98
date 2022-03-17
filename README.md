@@ -16,7 +16,7 @@
 
 #### 软件架构
 
-![输入图片说明](editorSDK/img/1.drawio.png)
+![输入图片说明](editorSDK/img/jiagou.png)
 
 
 #### 安装教程
