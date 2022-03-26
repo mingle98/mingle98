@@ -1,0 +1,390 @@
+* {
+    padding: 0;
+    margin: 0;
+    text-decoration: none;
+    list-style: none;
+}
+
+.hide {
+    display: none;
+}
+
+.editor-body {
+    width: 400px;
+    height: 600px;
+    background-color: black;
+    position: relative;
+    overflow: hidden;
+}
+
+.editor-img {
+    width: 100%;
+    position: absolute;
+    z-index: 1;
+    transition: all .1s linear;
+}
+
+.editor-content {
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    /* background-color: rgba(255, 0, 0, .5); */
+    z-index: 9;
+}
+
+.editor-top {
+    position: relative;
+    width: 100%;
+    height: calc(300px - 102px);
+    background-color: rgba(0, 0, 0, .7);
+}
+
+.editor-1-arrowBox {
+    width: 90%;
+    height: 40%;
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transform: translateX(-50%);
+}
+
+.editor-bottom {
+    position: relative;
+    width: 100%;
+    height: calc(300px - 102px);
+    background-color: rgba(0, 0, 0, .7);
+}
+
+.editor-2-arrowBox {
+    width: 85%;
+    height: 40%;
+    position: absolute;
+    bottom: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.editor-top-arrow, .editor-bottom-arrow, .editor-left-arrow, .editor-right-arrow, .editor-big-icon, .editor-small-icon  {
+    height: 20px;
+    width: 20px;
+    background-color: blueviolet;
+}
+
+.editor-top-arrow {
+    background: url(../img/topArrow.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.editor-bottom-arrow {
+    background: url(../img/bottomArrow.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.editor-left-arrow {
+    background: url(../img/leftArrow.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.editor-right-arrow {
+    background: url(../img/rightArrow.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.editor-big-icon {
+    background: url(../img/fangda.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.editor-small-icon {
+    background: url(../img/suoxiao.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.arrow:active {
+    opacity: .7;
+}
+
+.editor-middle-box {
+    width: 100%;
+    height: 204px;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
+
+.editor-right {
+    width: 98px;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.editor-left {
+    float: left;
+    width: 98px;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.editor-box {
+    float: left;
+    width: 200px;
+    height: 200px;
+    border: 2px solid white;
+    box-sizing: border-box;
+}
+
+.editor-toolBar {
+    width: 400px;
+    height: 60px;
+    /* background-color: rgba(0, 0, 0, .8); */
+    border: 1px solid #333;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    overflow: hidden;
+    border-radius: 15px;
+}
+
+.editor-toolBar-fold {
+    /* width: 338px; */
+    width: 0;
+    border-radius: 15px;
+    background-color: rgba(255, 255, 255, .8);
+    cursor: pointer;
+    transition: all .5s linear;
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999;
+    padding-left: 60px;
+}
+
+/* .editor-toolBar-fold::after {
+    position: absolute;
+    content: '工具';
+    text-align: center;
+    line-height: 60px;
+    color: white;
+    top: 0;
+    border-radius: 15px;
+    left: 0;
+    width: 60px;
+    height: 60px;
+    background-color: rgba(0, 0, 0, .5);
+} */
+
+
+.toolbar-item-fold {
+    opacity: 0;
+}
+
+.toolbar-item {
+    width: 20%;
+    height: 100%;
+    cursor: pointer;
+    /* background-color: red; */
+}
+
+.toolbar-item-before {
+    position: absolute;
+    text-align: center;
+    line-height: 60px;
+    color: white;
+    top: 0;
+    border-radius: 15px;
+    left: 0;
+    width: 60px;
+    height: 60px;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.toolBar-item-icon-box {
+    width: 100%;
+    height: 60%;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    /* background-color: chartreuse; */
+}
+
+.toolbar-item span {
+    display: block;
+}
+
+.toolBar-item-icon {
+    width: 30px;
+    height: 30px;
+    background-color: gold;
+}
+
+.chexiao-icon {
+    background: url(../img/chexiao.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.reselect-icon {
+    background: url(../img/shangchuan.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.xuanzhuan-icon {
+    background: url(../img/xuanzhuan.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.ok-icon {
+    background: url(../img/ok.png) no-repeat center center;
+    background-size: 100% 100%;
+}
+
+.toolBar-item-text {
+    height: 40%;
+    width: 100%;
+    text-align: center;
+    color: rgb(145, 130, 0);
+    font-size: 12px;
+    line-height: 1.2rem;
+}
+
+.canvas-box {
+    position: absolute;
+    z-index: 99999;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
+    background-color: rgb(0, 0, 0);
+}
+
+.editor-back-arrow {
+    position: absolute;
+    content: '';
+    width: 30px;
+    height: 30px;
+    background: url(../img/leftArrow.png) no-repeat center center;
+    background-size: 100% 100%;
+    left: 10px;
+    top: 30px;
+}
+
+.canvas {
+    /* width: 100%;
+    height: 300px; */
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgb(255, 255, 255);
+}
+
+.download-tip {
+    display: none;
+    width: 100px;
+    height: 20px;
+    line-height: 20px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 5%;
+    text-align: center;
+}
+
+.download-button {
+    color: white;
+    width: 180px;
+    height: 45px;
+    border-radius: 10px;
+    text-align: center;
+    line-height: 40px;
+    position: absolute;
+    font-size: 16px;
+    cursor: pointer;
+    left: 50%;
+    bottom: calc(5% + 40px);
+    transform: translateX(-50%);
+    background-color: rgb(63, 132, 247);
+}
+
+.disabledCls {
+    background-color: rgb(161, 161, 161);
+}
+
+.editor-dialog-mask {
+    display: block;
+    background-color: rgba(0, 0, 0, .5);
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    position: fixed;
+
+}
+
+.dialog-body {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.loading-box {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 99999999;
+    display: none;
+}
+
+.loading-icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 10px;
+    background-color: white;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.loading-iocn-img {
+    width: 50px;
+    height: 50%;
+    background: url(../img/loading.png) no-repeat center center;
+    background-size: 100% 100%;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 20px;
+    animation: loading 2s infinite linear;
+}
+
+.loading-txt {
+    min-width: 20px;
+    min-height: 15px;
+    color: #333;
+    font-size: 12px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 10px;
+}
+
+@keyframes loading {
+    0% {
+        transform: translateX(-50%) rotate(0);
+    }
+
+    100% {
+        transform: translateX(-50%) rotate(360deg);
+    }
+}
