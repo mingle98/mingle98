@@ -12,7 +12,7 @@ class Base {
     // 1.将ajax进行函数封装
     ajax(options) {
         // 存储的是默认值
-        var defaults = {
+        let defaults = {
             type: "get",
             url: "",
             data: {},
@@ -25,11 +25,11 @@ class Base {
         // 使用options对象中的属性覆盖defaults对象中的属性
         Object.assign(defaults, options);
         // 第一：创建ajax对象（使用js中XMLHttpRequest的构造函数）
-        var xhr = new XMLHttpRequest();
+        let xhr = new XMLHttpRequest();
         // 处理并且拼接请求参数
-        var params = "";
+        let params = "";
         // 循环用户传入的对象类型格式的参数（for in）
-        for (var attr in defaults.data) {
+        for (let attr in defaults.data) {
             // 将参数转换成字符串形式
             if (defaults.data.hasOwnProperty(attr)) {
                 params += attr + "=" + defaults.data[attr] + "&";
@@ -48,7 +48,7 @@ class Base {
         // 如果请求方式是post
         if (defaults.type == "post") {
             // 用户希望的向服务器端传递的请求参数的类型
-            var contentType = defaults.header["Content-Type"];
+            let contentType = defaults.header["Content-Type"];
             // 设置请求参数格式类型
             xhr.setRequestHeader("Content-Type", contentType);
             // 判断用户希望的请求参数的格式类型
@@ -65,7 +65,7 @@ class Base {
         // 第四：监听xgr下面的onload事件，当xhr对象接受完响应数据后触发（因为这里发出请求到接受完成数据是需要时间的所以是异步的）
         xhr.onload = function () {
             // 获取响应头中的数据
-            var ContentType = xhr.getResponseHeader("Content-Type");
+            let ContentType = xhr.getResponseHeader("Content-Type");
             // 服务器端响应回来的数据
             responseText = xhr.responseText;
             // 如果响应类型中包含aplication/json
@@ -86,14 +86,14 @@ class Base {
     // 2.将JSONP封装成函数
     jsonp(options){
         // 创建script标签
-        var script = document.createElement("script");
+        let script = document.createElement("script");
         // 拼接字符串的变量
-        var params = "";
-        for(var attr in options.data){
+        let params = "";
+        for(let attr in options.data){
             params += "&" + attr + "=" + options.data[attr];
         }
         // 解决多次请求函数名重复导致的数据重叠问题(函数名myjsonp-123456格式)
-        var fnName = "myjsonp" + Math.random().toString().replace(".", "")
+        let fnName = "myjsonp" + Math.random().toString().replace(".", "")
         // 将定义的函数也封装进去了，但是它已经不是全局函数了（因此我们要想办法将他变成全局函数就要挂载到window对象下）
         window[fnName] = options.success;
         // 设置src属性
@@ -108,11 +108,11 @@ class Base {
     };
     // 3.节流函数
     throttle(fn, delay = 500) {
-        var firstFlag = true;
-        var timer;
+        let firstFlag = true;
+        let timer;
         return function () { 
-            var self = this;
-            var ags = arguments;
+            let self = this;
+            let ags = arguments;
             if (firstFlag) {
                 fn.apply(self, ags);
                 firstFlag = false;
@@ -127,9 +127,9 @@ class Base {
     };
     // 4.防抖函数
     debounce(fn, delay) {
-        var timer;
+        let timer;
         return function (params) { 
-            var self  = this;
+            let self  = this;
             if (timer) clearTimeout(timer);
             timer = setTimeout(function () { 
                 fn.apply(self, params);
@@ -194,9 +194,9 @@ class Base {
     addClass(ele, cName) {
         if (!this.hasClassName(ele, cName)) {
             // 获取class内容
-            var classObj = ele.className;
+            let classObj = ele.className;
             // 是否需要加空格 如果className是空就不需要
-            var bank = (classObj === '') ? '' : ' ';
+            let bank = (classObj === '') ? '' : ' ';
             ele.className += bank + cName;
         };
         return this;
@@ -235,13 +235,13 @@ class Base {
             return query;
         };
         if (typeof query === 'object') {
-            var builder = [];
+            let builder = [];
             for(key in query) {
                 if(query.hasOwnProperty(key)) {
-                    var value = query[key];
+                    let value = query[key];
                     if (value) {
                         builder.length && builder.push('&');
-                        var res = (typeof value === 'boolean') ? (value ? '1' : '0') : value.toString();
+                        let res = (typeof value === 'boolean') ? (value ? '1' : '0') : value.toString();
                         builder.push(key, '=', res);
                     }
                 }
@@ -253,7 +253,7 @@ class Base {
     appendQuery(url, query) {
         query = this.buildQuery(query);
         if (typeof (query) === 'string') {
-            var hasQuery = (/\?/g).test(url);
+            let hasQuery = (/\?/g).test(url);
             url += (hasQuery ? "&" : "?") + query;
         };
         return query;
@@ -261,8 +261,8 @@ class Base {
     // 10.通过id获取元素
     getEleById(id_tail) {
         if (!$id_prefix) return null;
-        var allid = String($id_prefix) + String(id_tail);
-        var targetDom = document.getElementById(allid);
+        let allid = String($id_prefix) + String(id_tail);
+        let targetDom = document.getElementById(allid);
         if (targetDom) {
             return targetDom;
         };
@@ -270,14 +270,14 @@ class Base {
     };
     // 11.获取ie浏览器版本
     IEVersion () {
-        var userAgent = navigator.userAgent; //取得浏览器的userAgent字符串  
-        var isIE = userAgent.indexOf('compatible') > -1 && userAgent.indexOf('MSIE') > -1; //判断是否IE<11浏览器  
-        var isEdge = userAgent.indexOf('Edge') > -1 && !isIE; //判断是否IE的Edge浏览器  
-        var isIE11 = userAgent.indexOf('Trident') > -1 && userAgent.indexOf('rv:11.0') > -1;
+        let userAgent = navigator.userAgent; //取得浏览器的userAgent字符串  
+        let isIE = userAgent.indexOf('compatible') > -1 && userAgent.indexOf('MSIE') > -1; //判断是否IE<11浏览器  
+        let isEdge = userAgent.indexOf('Edge') > -1 && !isIE; //判断是否IE的Edge浏览器  
+        let isIE11 = userAgent.indexOf('Trident') > -1 && userAgent.indexOf('rv:11.0') > -1;
         if (isIE) {
-            var reIE = new RegExp('MSIE (\\d+\\.\\d+);');
+            let reIE = new RegExp('MSIE (\\d+\\.\\d+);');
             reIE.test(userAgent);
-            var fIEVersion = parseFloat(RegExp['$1']);
+            let fIEVersion = parseFloat(RegExp['$1']);
             if (fIEVersion == 7) {
                 return 7;
             } else if (fIEVersion == 8) {
@@ -299,8 +299,8 @@ class Base {
     };
     // 12.获取cookie
     getRaw(key) {
-        var reg = new RegExp('(^| )' + key + '=([^;]*)(;|\x24)');
-        var result = reg.exec(document.cookie);
+        let reg = new RegExp('(^| )' + key + '=([^;]*)(;|\x24)');
+        let result = reg.exec(document.cookie);
         if (result) {
             return result[2] || null;
         }
@@ -308,7 +308,7 @@ class Base {
         return null;
     };
     getCookie(key) {
-        var value = getRaw(key);
+        let value = getRaw(key);
         if (typeof value === 'string') {
             value = decodeURIComponent(value);
             return value;
@@ -317,11 +317,11 @@ class Base {
     };
     // 13.获取安卓版本号
     get_android_version() {
-        var ua = navigator.userAgent.toLowerCase();
-        var version = null;
+        let ua = navigator.userAgent.toLowerCase();
+        let version = null;
         if (ua.indexOf('android') > 0) {
-            var reg = /android [\d._]+/gi;
-            var vInfo = ua.match(reg);
+            let reg = /android [\d._]+/gi;
+            let vInfo = ua.match(reg);
             version = (vInfo + '').replace(/[^0-9|_.]/ig, '').replace(/_/ig, '.'); // 得到版本号4.2.2
             version = parseInt(version.split('.')[0], 10);// 得到版本号第一位
         };
@@ -338,7 +338,7 @@ class Base {
             parentEle.insertAdjacentHTML(position, tempStr);
         }
         else {
-            var box = document.createElement('div');
+            let box = document.createElement('div');
             this.insertHTML('afterBegin', tempStr, box);
             document.body.appendChild(box);
         };
@@ -380,10 +380,10 @@ class Base {
     };
     // 17.判断是否为pc浏览器
     isPC() {
-        var userAgentInfo = navigator.userAgent;
-        var Agents = ['Android', 'iPhone', 'SymbianOS', 'Windows Phone', 'iPad', 'iPod'];
-        var flag = true;
-        for (var v = 0; v < Agents.length; v++) {
+        let userAgentInfo = navigator.userAgent;
+        let Agents = ['Android', 'iPhone', 'SymbianOS', 'Windows Phone', 'iPad', 'iPod'];
+        let flag = true;
+        for (let v = 0; v < Agents.length; v++) {
             if (userAgentInfo.indexOf(Agents[v]) > 0) {
                 flag = false;
                 break;
@@ -393,7 +393,7 @@ class Base {
     };
     // 18.延时函数
     async sleep(delay = 500) {
-        var fn = function () {
+        let fn = function () {
             return new Promise((resolve, reject) => {
                 setTimeout(_ => {
                     resolve();
@@ -405,11 +405,11 @@ class Base {
     };
     // 19.封装获取query参数的方法
     getQueryString(name) {
-        var locationArray = location.href.substring(location.href.indexOf("?") + 1).split("&");
-        var locationObj = {};
-        for (var i = 0,
+        let locationArray = location.href.substring(location.href.indexOf("?") + 1).split("&");
+        let locationObj = {};
+        for (let i = 0,
             len = locationArray.length; i < len; i++) {
-            var tempArray = locationArray[i].split("=");
+            let tempArray = locationArray[i].split("=");
             locationObj[tempArray[0]] = tempArray[1]
         }
         if (name && name !== 0 && name !== false) {
@@ -422,7 +422,7 @@ class Base {
 
 
 // 全局变量
-var $id_prefix = '$baidu_' + Math.floor(Math.random() * 1000000).toString().split(',');
+let $id_prefix = '$baidu_' + Math.floor(Math.random() * 1000000).toString().split(',');
 // console.log('$id_prefix', $id_prefix);
 let downloadFlag = false;
 
@@ -625,7 +625,7 @@ class ImgEditor {
     // 存模版的方法
     get_tpl(file) {
         let me = this;
-        var editorBodyTpl = '<div class="editor-body" id="' + $id_prefix+ '_editor-body">' +
+        let editorBodyTpl = '<div class="editor-body" id="' + $id_prefix+ '_editor-body">' +
                                 '<img class="editor-img" src="' + this.options.uploadImg + '" alt="" id="' + $id_prefix+ '_editor-img">' +
                                 '<div class="editor-content">' +
                                     '<div class="editor-top" id="' + $id_prefix+ '_editor-top">' +
@@ -662,7 +662,7 @@ class ImgEditor {
                                 '</div>' +
                             '</div>';
 
-        var editorToolTpl = '<div class="editor-toolBar" id="' + $id_prefix + '_editor-toolBar">' +
+        let editorToolTpl = '<div class="editor-toolBar" id="' + $id_prefix + '_editor-toolBar">' +
                                 '<div class="toolbar-item toolbar-item-before" id="' + $id_prefix+ '_toolbar-item-before">工具' +
                                 '</div>' +
                                 '<div class="toolbar-item" id="' + $id_prefix + '_tool-select">' +
@@ -690,7 +690,7 @@ class ImgEditor {
                                     '<span class="toolBar-item-text">' + me.lang.tools.confirm + '</span>' +
                                 '</div>' +
                             '</div>';
-        var tempObj = {
+        let tempObj = {
             editor: editorBodyTpl,
             editorTool: editorToolTpl
         };
@@ -698,10 +698,10 @@ class ImgEditor {
     }
     // 渲染模版
     renderTpl() {
-        var tempEditorTpl = this.get_tpl('editor');
-        var tempEditorToolTpl = this.get_tpl('editorTool');
+        let tempEditorTpl = this.get_tpl('editor');
+        let tempEditorToolTpl = this.get_tpl('editorTool');
         //  弹窗
-        var maskDiv = document.createElement('div');
+        let maskDiv = document.createElement('div');
         maskDiv.id = $id_prefix + "_editor-dialog-mask";
         maskDiv.className = "editor-dialog-mask";
 
@@ -719,7 +719,7 @@ class ImgEditor {
             console.log('Embedding');
             // 渲染编辑器主体到页面
             if (this.options.containerId) {
-                var containerEle = document.getElementById(this.options.containerId);
+                let containerEle = document.getElementById(this.options.containerId);
                 this.base.insertHTML('afterBegin', tempEditorTpl, containerEle);
             }
             else {
@@ -727,7 +727,7 @@ class ImgEditor {
             };
             // 渲染编辑器工具bar主体到页面
             if (this.options.toolContainerId) {
-                var containerToolEle = document.getElementById(this.options.toolContainerId);
+                let containerToolEle = document.getElementById(this.options.toolContainerId);
                 this.base.insertHTML('afterBegin', tempEditorToolTpl, containerToolEle);
             }
             else {
@@ -746,13 +746,13 @@ class ImgEditor {
     };
     // 设置事件
     setEvent() {
-        var toolbar = this.base.getEleById('_editor-toolBar');
-        var beforeItem = this.base.getEleById('_toolbar-item-before');
-        var me = this;
+        let toolbar = this.base.getEleById('_editor-toolBar');
+        let beforeItem = this.base.getEleById('_toolbar-item-before');
+        let me = this;
         if (this.options.module === 'dialog') {
-            var toolStatus = false;
+            let toolStatus = false;
             // 展开折叠工具bar
-            var visibleTollBar = function () {
+            let visibleTollBar = function () {
                 if (me.options.module !== 'dialog') return;
                 if (!toolStatus) {
                     if (+me.store.equipmentW <= 460) {
@@ -775,13 +775,13 @@ class ImgEditor {
 
 
         // 1.编辑框行为
-        var editorBox = me.base.getEleById('_editor-box');
-        var editorBoxEnterFn = function () {
+        let editorBox = me.base.getEleById('_editor-box');
+        let editorBoxEnterFn = function () {
             if (me.store.fingerEenter) return;
             me.store.fingerEenter = true;
             // console.log('fingerEenter:', me.store.fingerEenter);
         };
-        var editorBoxLeaveFn = function () { 
+        let editorBoxLeaveFn = function () { 
             me.store.fingerEenter = false;
             // 关闭图片操作行为
             me.store.imgMoveFinish = true;
@@ -794,9 +794,9 @@ class ImgEditor {
         this.base.addEventHandler(editorBox, 'touchend', editorBoxLeaveFn);
 
         // 2.图片行为editor-img
-        var imgElem = this.base.getEleById('_editor-img');
+        let imgElem = this.base.getEleById('_editor-img');
         //  移动图片
-        var ImgElemDownFn = function (e) {
+        let ImgElemDownFn = function (e) {
             if (!me.store.rotateAngleStatus) {
                 return false;
             };
@@ -806,14 +806,14 @@ class ImgEditor {
             me.store.imgMoveStart = true;
             e = e || window.event;
             me.base.preventDefault(e);
-            var etype = e.changedTouches || e;
+            let etype = e.changedTouches || e;
             // 双指放大
             if (e.changedTouches && e.changedTouches.length > 1) {// 移动端  两指
-                var finger1 = {
+                let finger1 = {
                     x: parseInt(etype[0].clientX, 10),
                     y: parseInt(etype[0].clientY, 10)
                 };
-                var finger2 = {
+                let finger2 = {
                     x: parseInt(etype[1].clientX, 10),
                     y: parseInt(etype[1].clientY, 10)
                 }
@@ -821,7 +821,7 @@ class ImgEditor {
                 me.store.imgmouseStartP.push(finger1, finger2);
             }
             else if (e.changedTouches && e.changedTouches.length === 1) {// 移动端  单指
-                var finger1 = {
+                let finger1 = {
                     x: parseInt(etype[0].clientX, 10),
                     y: parseInt(etype[0].clientY, 10)
                 };
@@ -829,7 +829,7 @@ class ImgEditor {
                 // console.log('移动端  单指start:', me.store.imgmouseStartP[0]);
             }
             else {// pc
-                var finger1 = {
+                let finger1 = {
                     x: parseInt(etype.clientX, 10),
                     y: parseInt(etype.clientY, 10)
                 };
@@ -838,7 +838,7 @@ class ImgEditor {
             };
             // console.log('当前鼠标位置', e.changedTouches, me.store.imgmouseStartP)
         };
-        var ImgElemMoveFn = function (e) {
+        let ImgElemMoveFn = function (e) {
             if (!me.store.rotateAngleStatus) {
                 alert('旋转模式下暂不支持移动操作！');
                 return false;
@@ -849,13 +849,13 @@ class ImgEditor {
             if (!me.store.imgMoveStart ) return;
             e = e || window.event;
             me.base.preventDefault(e);
-            var etype = e.changedTouches || e;
+            let etype = e.changedTouches || e;
             if (e.changedTouches && e.changedTouches.length > 1) {// 移动端  两指
-                var finger1 = {
+                let finger1 = {
                     x: parseInt(etype[0].clientX, 10),
                     y: parseInt(etype[0].clientY, 10)
                 };
-                var finger2 = {
+                let finger2 = {
                     x: parseInt(etype[1].clientX, 10),
                     y: parseInt(etype[1].clientY, 10)
                 }
@@ -863,7 +863,7 @@ class ImgEditor {
                 me.store.imgmouseMoveP.push(finger1, finger2);
             }
             else if (e.changedTouches && e.changedTouches.length === 1) { // 移动端  单指
-                var finger1 = {
+                let finger1 = {
                     x: parseInt(etype[0].clientX, 10),
                     y: parseInt(etype[0].clientY, 10)
                 };
@@ -871,7 +871,7 @@ class ImgEditor {
                 me.store.imgmouseMoveP[0] = (finger1);
             }
             else {// pc 单指
-                var finger1 = {
+                let finger1 = {
                     x: parseInt(etype.clientX, 10),
                     y: parseInt(etype.clientY, 10)
                 };
@@ -881,26 +881,26 @@ class ImgEditor {
             // me.store.imgmouseMoveP = {x: parseInt(etype.clientX, 10), y: parseInt(etype.clientY, 10)};
             // 判断是移动或则缩放
             if (e.changedTouches && e.changedTouches.length > 1) {// 移动端 双指缩放
-                var imgmouseStartP1 = me.store.imgmouseStartP[0];
-                var imgmouseStartP2 = me.store.imgmouseStartP[1];
-                var imgmouseMoveP1 = me.store.imgmouseMoveP[0];
-                var imgmouseMoveP2 = me.store.imgmouseMoveP[1];
+                let imgmouseStartP1 = me.store.imgmouseStartP[0];
+                let imgmouseStartP2 = me.store.imgmouseStartP[1];
+                let imgmouseMoveP1 = me.store.imgmouseMoveP[0];
+                let imgmouseMoveP2 = me.store.imgmouseMoveP[1];
                 // 计算斜边
-                var lenX1 = parseInt(imgmouseMoveP1.x - imgmouseStartP1.x, 10);
-                var lenY1 = parseInt(imgmouseMoveP1.y - imgmouseStartP1.y, 10);
-                var lenX2 = parseInt(imgmouseMoveP2.x - imgmouseStartP2.x, 10);
-                var lenY2 = parseInt(imgmouseMoveP2.y - imgmouseStartP2.y, 10);
-                var hypotenuse1 = Math.sqrt(Math.pow(lenX1, 2) + Math.pow(lenY1, 2));
-                var hypotenuse2 = Math.sqrt(Math.pow(lenX2, 2) + Math.pow(lenY2, 2));
+                let lenX1 = parseInt(imgmouseMoveP1.x - imgmouseStartP1.x, 10);
+                let lenY1 = parseInt(imgmouseMoveP1.y - imgmouseStartP1.y, 10);
+                let lenX2 = parseInt(imgmouseMoveP2.x - imgmouseStartP2.x, 10);
+                let lenY2 = parseInt(imgmouseMoveP2.y - imgmouseStartP2.y, 10);
+                let hypotenuse1 = Math.sqrt(Math.pow(lenX1, 2) + Math.pow(lenY1, 2));
+                let hypotenuse2 = Math.sqrt(Math.pow(lenX2, 2) + Math.pow(lenY2, 2));
                 // 缩放比例
-                var scaleNum = hypotenuse2 / hypotenuse1;
+                let scaleNum = hypotenuse2 / hypotenuse1;
                 me.updateImgChange('scale', scaleNum);
                 // console.log('移动端 两个手指缩放：',  me.store.imgmouseStartP, imgmouseMoveP);
             }
             else {// pc/移动 单指移动
                 // 计算平移的XY
-                var imgmouseStartP = me.store.imgmouseStartP[0];
-                var imgmouseMoveP = me.store.imgmouseMoveP[0];
+                let imgmouseStartP = me.store.imgmouseStartP[0];
+                let imgmouseMoveP = me.store.imgmouseMoveP[0];
                 me.store.imgTransForXY = {
                     x: imgmouseMoveP['x'] - imgmouseStartP['x'],
                     y: imgmouseMoveP['y'] - imgmouseStartP['y']
@@ -916,7 +916,7 @@ class ImgEditor {
                 me.updateImgChange('position');
             };
         };
-        var ImgElemUpFn = function (e) {
+        let ImgElemUpFn = function (e) {
             if (!me.store.rotateAngleStatus) {
                 return false;
             };
@@ -939,7 +939,7 @@ class ImgEditor {
         };
         // 3.工具栏行为_tool-redo
         // 撤销
-        var redoFn = function () {
+        let redoFn = function () {
             closeResPage();
             console.log('redo');
             // 触发hook
@@ -952,19 +952,19 @@ class ImgEditor {
             me.store.rotateAngleStatus = true;
             if (!me.store.rotateAngleStatus && me.options.disableTouch) {
                 me.base.getEleById('_editor-2-arrowBox').style.opacity = '0';
-           } else if (me.store.rotateAngleStatus && me.options.disableTouch) {
-               me.base.getEleById('_editor-2-arrowBox').style.opacity = '1';
-           };
+            } else if (me.store.rotateAngleStatus && me.options.disableTouch) {
+                me.base.getEleById('_editor-2-arrowBox').style.opacity = '1';
+            };
         };
         // 旋转
-        var rotateFn = function () {
+        let rotateFn = function () {
             closeResPage();
             console.log('rotate')
             // 图片归位
             me.setImgCenter('rotate');
         };
         // 重选
-        var selectFn = function () {
+        let selectFn = function () {
             closeResPage();
             let newUrl = prompt('输入新图片URL');
             if (newUrl && !/(\w+):\/\/([^/:]+)(:\d*)?([^# ]*)/.test(newUrl)) {
@@ -988,14 +988,14 @@ class ImgEditor {
             console.log('select', newUrl);
         };
         // 选好了 _tool-ok
-        var confirmFn = function () {
+        let confirmFn = function () {
             closeResPage();
             console.log('confirmFn');
             // canvas绘制
             me.draw();
         };
         // 如果处于结果状态页面先关闭结果页面
-        var closeResPage = async function () {
+        let closeResPage = async function () {
             me.base.getEleById('_canvas-box').style.display === 'block' && (me.base.getEleById('_canvas-box').style.display = 'none');
             await me.base.sleep();
         }
@@ -1005,7 +1005,7 @@ class ImgEditor {
         this.base.addEventHandler(this.base.getEleById('_tool-ok'), 'click', confirmFn);
 
         // 4. 上下左右移动箭头按钮事件 _editor-top-arrow、_editor-bottom-arrow、_editor-left-arrow、_editor-right-arrow\_canvas-box、_editor-back-arrow
-        var arrowChangeOp = function (type) {
+        let arrowChangeOp = function (type) {
             let step = Math.abs(options.disableTouchStepLen);
             switch (type) {
                 case 'top':
@@ -1060,25 +1060,25 @@ class ImgEditor {
     bindEventStore(bindEle, eventType, customizeFn) {
         let me = this;
         // 点击事件处理
-        var eventClickFn = function (e) {
+        let eventClickFn = function (e) {
             customizeFn && customizeFn(e);
             // 触发配置hook
             me.options.onClickHook(e, bindEle);
         };
         // 移动事件处理
-        var eventMoveFn = function (e) {
+        let eventMoveFn = function (e) {
             customizeFn && customizeFn(e);
             // 触发配置hook
             me.options.onMoveHook(e, bindEle);
         };
         // 接触结束事件处理
-        var eventEndFn = function (e) {
+        let eventEndFn = function (e) {
             customizeFn && customizeFn(e);
             // 触发配置hook
             me.options.onEndHook(e, bindEle);
         };
         // 覆盖事件处理
-        var eventEnterFn = function (e) {
+        let eventEnterFn = function (e) {
             customizeFn && customizeFn(e);
             // 触发配置hook
             me.options.onEnterHook(e, bindEle);
@@ -1110,7 +1110,7 @@ class ImgEditor {
     // 检查端
     mobilecheck() {
         try {
-            var platform = navigator.platform || 'Win';
+            let platform = navigator.platform || 'Win';
             if (/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
                 this.wapsetconfig();
             }
@@ -1149,7 +1149,7 @@ class ImgEditor {
     };
     initData() {
         // 获取设备宽高
-        var {w, h} = this.base.getSViewportOffset();
+        let {w, h} = this.base.getSViewportOffset();
         this.store.equipmentW = w;
         this.store.equipmentH = h;
         // 剪裁框的尺寸
@@ -1277,14 +1277,14 @@ class ImgEditor {
     };
     // 图片变化更新 方向
     updateImgChange(type, scaleNum, directionType, directionNum) {
-        var imgElem = this.base.getEleById('_editor-img');
-        var me = this;
+        let imgElem = this.base.getEleById('_editor-img');
+        let me = this;
+        var currentTransform;
         me.updateStore();
         switch (type) {
             case 'position':
                 // 从新组合
-                var currentTransform = '',
-                    afterImgLeft,
+                let afterImgLeft,
                     afterImgTop;
                 // 变化后的imgLeft、imgTop
                 if (me.options.disableTouch && directionType && directionNum) {
@@ -1315,7 +1315,7 @@ class ImgEditor {
                 me.detectionImgPos();
                 break;
             case 'scale':
-                var resSacle = (scaleNum === 0) ? 1 : me.store.imgScale * scaleNum;
+                let resSacle = (scaleNum === 0) ? 1 : me.store.imgScale * scaleNum;
                 // 更新数据
                 // 实际允许缩小的比例
                 let minHW = Math.min(me.store.imgHeight, me.store.imgWidth);
@@ -1331,8 +1331,8 @@ class ImgEditor {
                     me.store.imgScale = resSacle;
                 };
                 me.store.mapRealCutProportion = me.store.imgOriginScaleNum * me.store.imgScale;
-                var currentTransform = me.base.getEleById('_editor-img').style.transform;
-                var reg = /(\s|^)scale\((\d*\.?\d*)\)(\s|$)/g;
+                currentTransform = me.base.getEleById('_editor-img').style.transform;
+                let reg = /(\s|^)scale\((\d*\.?\d*)\)(\s|$)/g;
                 if (reg.test(currentTransform)) {
                     currentTransform = currentTransform.replace(reg, '');
                 };
@@ -1348,14 +1348,14 @@ class ImgEditor {
     };
     // 图片居中
     setImgCenter(type) {
-        var me = this;
-        var imgTop;
-        var imgLeft;
-        var setCenterFn = function (callback) {
+        let me = this;
+        let imgTop;
+        let imgLeft;
+        let setCenterFn = function (callback) {
             // 根据编辑器body宽高比例调整img实际尺寸
-            var imgOriginWH, imgOriginScaleNum;
-            var editorBodyWH = parseInt(me.base.getEleById('_editor-body').style.width) / parseInt(me.base.getEleById('_editor-body').style.height);
-            var tempImgElm = new Image();
+            let imgOriginWH, imgOriginScaleNum;
+            let editorBodyWH = parseInt(me.base.getEleById('_editor-body').style.width) / parseInt(me.base.getEleById('_editor-body').style.height);
+            let tempImgElm = new Image();
             tempImgElm.src = me.options.uploadImg;
             tempImgElm.onload = function () { 
                 me.store.imgOriginWH = imgOriginWH = tempImgElm.width / tempImgElm.height;
@@ -1434,12 +1434,12 @@ class ImgEditor {
             };
             // 如果当前已经旋转为正了就支持移动操作，否者不支持移动，只支持缩放和旋转
             if (!me.store.rotateAngleStatus && me.options.disableTouch) {
-                 me.base.getEleById('_editor-2-arrowBox').style.opacity = '0';
+                    me.base.getEleById('_editor-2-arrowBox').style.opacity = '0';
             } else if (me.store.rotateAngleStatus && me.options.disableTouch) {
                 me.base.getEleById('_editor-2-arrowBox').style.opacity = '1';
             };
-            var currentTransform = me.base.getEleById('_editor-img').style.transform;
-            var reg = /(\s|^)rotate\((\d*)deg\)(\s|$)/g;
+            let currentTransform = me.base.getEleById('_editor-img').style.transform;
+            let reg = /(\s|^)rotate\((\d*)deg\)(\s|$)/g;
             if (reg.test(currentTransform)) {
                 currentTransform = currentTransform.replace(reg, '');
             };
@@ -1450,8 +1450,8 @@ class ImgEditor {
     };
     // 检图片边缘---位置
     detectionImgPos(type) {
-        var me = this;
-        var imgElem = this.base.getEleById('_editor-img');
+        let me = this;
+        let imgElem = this.base.getEleById('_editor-img');
         if (this.store.limitMove) {
             return;
         };
@@ -1459,12 +1459,12 @@ class ImgEditor {
         me.updateStore();
         let left = me.store.imgLeft + me.store.imgWidth / 2;
         let top = me.store.imgTop + me.store.imgHeight / 2;
-        var scale = me.store.imgScale;
+        let scale = me.store.imgScale;
         let imgWidth = me.store.imgWidth;
         let imgHeight = me.store.imgHeight;
         if (me.store.rotateAngle / 90 % 2) {
-          imgWidth = me.store.imgHeight;
-          imgHeight = me.store.imgWidth;
+            imgWidth = me.store.imgHeight;
+            imgHeight = me.store.imgWidth;
         };
         left = me.store.trimmingBoxleft + imgWidth * scale / 2 >= left
             ? left : me.store.trimmingBoxleft + imgWidth * scale / 2;
@@ -1483,10 +1483,10 @@ class ImgEditor {
     // 检图片边缘---缩放
     detectionImgScale(init) {
         let me = this;
-        var scale = this.store.imgScale;
+        let scale = this.store.imgScale;
         this.updateStore();
-        var imgWidth = this.store.imgWidth;
-        var imgHeight = this.store.imgHeight;
+        let imgWidth = this.store.imgWidth;
+        let imgHeight = this.store.imgHeight;
         // 根据图片width进行判断
         if (imgWidth && imgWidth * scale < this.store.width) {
             scale = this.store.width / imgWidth;
@@ -1496,8 +1496,8 @@ class ImgEditor {
         };
         me.store.imgScale = scale;
         me.store.mapRealCutProportion = me.store.imgOriginScaleNum * me.store.imgScale;
-        var currentTransform = me.base.getEleById('_editor-img').style.transform;
-        var reg = /(\s|^)scale\((\d*\.?\d*)\)(\s|$)/g;
+        let currentTransform = me.base.getEleById('_editor-img').style.transform;
+        let reg = /(\s|^)scale\((\d*\.?\d*)\)(\s|$)/g;
         if (reg.test(currentTransform)) {
             currentTransform = currentTransform.replace(reg, '');
         };
@@ -1511,7 +1511,7 @@ class ImgEditor {
     };
     // 更新store中的数据
     updateStore() {
-        var me = this;
+        let me = this;
         // 更新图片的宽高
         this.store.imgWidth = parseInt(me.base.getEleById('_editor-img').width);
         this.store.imgHeight = parseInt(me.base.getEleById('_editor-img').height);
@@ -1529,7 +1529,7 @@ class ImgEditor {
         if (!type) return null;
         switch (type) {
             case 'imgTransLT':
-                var currentImgTransform = me.base.getEleById('_editor-img').style.transform;
+                let currentImgTransform = me.base.getEleById('_editor-img').style.transform;
                 break;
             case 'test':
                 break;
@@ -1543,11 +1543,11 @@ class ImgEditor {
     // canvas绘制
     draw() {
         let me = this;
-        var img = me.base.getEleById('_editor-img');
-        var canvas = me.base.getEleById('_canvas');
+        let img = me.base.getEleById('_editor-img');
+        let canvas = me.base.getEleById('_canvas');
         canvas.width = me.store.width;
         canvas.height = me.store.height;
-        var ctx = canvas.getContext("2d");
+        let ctx = canvas.getContext("2d");
         let currentScaleNum = me.store.imgScale * me.store.imgOriginScaleNum;
         // 形变函数
         /**
@@ -1560,7 +1560,7 @@ class ImgEditor {
          * @param  scale     缩放比例
          * @param  rotate     旋转角度
          */
-        var transformFn = async function (ctx, img, imgx, imgy, imgwidth, imgheight, dx, dy, dwidth, dheight, scale, rotate, callback) {
+        let transformFn = async function (ctx, img, imgx, imgy, imgwidth, imgheight, dx, dy, dwidth, dheight, scale, rotate, callback) {
             currentScaleNum = scale * me.store.imgOriginScaleNum;
             imgwidth = imgwidth / currentScaleNum;
             imgheight = imgheight / currentScaleNum;
@@ -1570,14 +1570,23 @@ class ImgEditor {
             ctx.rotate(degrees);
             ctx.translate(-(dx + dwidth / 2), -(dy + dheight / 2));
             ctx.drawImage(img, imgx, imgy, imgwidth, imgheight, dx, dy, dwidth, dheight);
-            let _ctx = ctx;
-            var imgData = _ctx.getImageData(dx, dy, dwidth, dheight);
-            var data = imgData.data;//每个像素的data是个数组（红，绿，蓝，透明度）
+            filterFn(ctx, dx, dy, dwidth, dheight);
+            me.base.getEleById('_loading-box').style.display = 'block';
+            await me.base.sleep();
+            me.base.getEleById('_canvas-box').style.display = 'block';
+            me.base.getEleById('_loading-box').style.display = 'none';
+            // callback();
+        };
+
+        // 滤镜函数
+        let filterFn = function(_ctx, dx, dy, dwidth, dheight) {
+            let imgData = _ctx.getImageData(dx, dy, dwidth, dheight);
+            let data = imgData.data;//每个像素的data是个数组（红，绿，蓝，透明度）
             switch (me.store.imgFilter.style) {
                 case 'rv':
                     // 反转滤镜
                     //遍历每个像素
-                    for (var i = 0; i < data.length; i += 4) {
+                    for (let i = 0; i < data.length; i += 4) {
                         data[i + 0] = 255 - data[i + 0];
                         data[i + 1] = 255 - data[i + 1];
                         data[i + 2] = 255 - data[i + 2];
@@ -1586,7 +1595,7 @@ class ImgEditor {
                     break;
                 case "bw":
                     // 黑白滤镜
-                    for (var i = 0; i < data.length; i += 4) {
+                    for (let i = 0; i < data.length; i += 4) {
                         let bwNum = +me.store.imgFilter.bwNum;
                         let average = (data[i + 0] + data[i + 1] + data[i + 2] + data[i + 3]) / 3 + bwNum;
                         data[i + 0] = average;   //红
@@ -1598,7 +1607,7 @@ class ImgEditor {
                     // 调整亮度滤镜
                     // let ltNum = +me.store.imgFilter.ltNum > 255 ? 255 : +me.store.imgFilter.ltNum < 0 ? 0 : +me.store.imgFilter.ltNum;
                     let ltNum = +me.store.imgFilter.ltNum;
-                    for (var i = 0; i < data.length; i += 4) {
+                    for (let i = 0; i < data.length; i += 4) {
                         data[i + 0] += ltNum;
                         data[i + 1] += ltNum;
                         data[i + 2] += ltNum;
@@ -1614,11 +1623,11 @@ class ImgEditor {
                         ljf_type = mkTypeNum.split('_')[0];
                         ljf_num = isNaN(mkTypeNum.split('_')[1]) ? 0 : +mkTypeNum.split('_')[1];
                     };
-                    for (var i = 0; i < data.length; i += 4) {
-                        var r = data[i + 0];
-                        var g = data[i + 1];
-                        var b = data[i + 2];
-                        var average = (r + g + b) / 3;
+                    for (let i = 0; i < data.length; i += 4) {
+                        let r = data[i + 0];
+                        let g = data[i + 1];
+                        let b = data[i + 2];
+                        let average = (r + g + b) / 3;
                         if (mkType === 'red') {
                             data[i + 1] = 0;
                             data[i + 2] = 0;
@@ -1646,11 +1655,6 @@ class ImgEditor {
             };
             //在指定位置输出图片
             _ctx.putImageData(imgData, 0, 0, dx, dy, dwidth, dheight);
-            me.base.getEleById('_loading-box').style.display = 'block';
-            await me.base.sleep();
-            me.base.getEleById('_canvas-box').style.display = 'block';
-            me.base.getEleById('_loading-box').style.display = 'none';
-            // callback();
         };
         me.updateStore();
         me.store.mapRealCutProportionXDif = me.store.initImgEleWidth * (me.store.imgScale - 1);
@@ -1668,14 +1672,14 @@ class ImgEditor {
         };
         let me = this;
         try {
-            var canvas = me.base.getEleById('_canvas');
-            var downloadTip =  me.base.getEleById('_download-tip');
-            var downloadBtn =  me.base.getEleById('_download-button');
-            var image = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-            var a = document.createElement("a");
+            let canvas = me.base.getEleById('_canvas');
+            let downloadTip =  me.base.getEleById('_download-tip');
+            let downloadBtn =  me.base.getEleById('_download-button');
+            let image = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+            let a = document.createElement("a");
             a.id = 'link';
             document.body.appendChild(a);
-            var link = document.getElementById('link');
+            let link = document.getElementById('link');
             link.setAttribute('download', Date.now() + '.png');
             link.setAttribute('href', image);
             link.click();
